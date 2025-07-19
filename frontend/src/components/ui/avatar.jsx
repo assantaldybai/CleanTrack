@@ -32,4 +32,4 @@ AvatarFallback.displayName = AvatarPrimitive.Fallback.displayName
 
 const AvatarInitials = AvatarFallback;
 
-export { Avatar, AvatarImage, AvatarFallback }
+export { Avatar, AvatarImage, AvatarFallback, AvatarInitials }
