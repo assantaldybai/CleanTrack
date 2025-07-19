@@ -1,12 +1,12 @@
-// Mock данные для системы управления уборкой AMP
+// Mock данные для системы управления клинингом SKY X
 export const mockUsers = [
   {
     id: '1',
     username: 'admin',
     password: 'admin123',
     role: 'admin',
-    name: 'Администратор AMP',
-    email: 'admin@amp.com'
+    name: 'Администратор SKY X',
+    email: 'admin@skyx.com'
   },
   {
     id: '2', 
@@ -14,7 +14,7 @@ export const mockUsers = [
     password: 'cleaner123',
     role: 'cleaner',
     name: 'Мария Иванова',
-    email: 'maria@amp.com',
+    email: 'maria@skyx.com',
     phone: '+7 (999) 123-45-67'
   },
   {
@@ -23,7 +23,7 @@ export const mockUsers = [
     password: 'cleaner123',
     role: 'cleaner',
     name: 'Анна Петрова',
-    email: 'anna@amp.com',
+    email: 'anna@skyx.com',
     phone: '+7 (999) 765-43-21'
   }
 ];
@@ -85,7 +85,7 @@ export const mockZones = [
 export const mockChecklists = [
   {
     id: '1',
-    name: 'Стандартная уборка офиса',
+    name: 'Стандартный клининг офиса',
     zoneType: 'office',
     items: [
       { id: '1', task: 'Пропылесосить ковровое покрытие', required: true },
@@ -97,7 +97,7 @@ export const mockChecklists = [
   },
   {
     id: '2',
-    name: 'Глубокая уборка туалета',
+    name: 'Глубокий клининг туалета',
     zoneType: 'restroom', 
     items: [
       { id: '1', task: 'Очистить унитазы дезинфицирующим средством', required: true },
@@ -110,7 +110,7 @@ export const mockChecklists = [
   },
   {
     id: '3',
-    name: 'Уборка торгового зала',
+    name: 'Клининг торгового зала',
     zoneType: 'retail',
     items: [
       { id: '1', task: 'Пропылесосить или вымыть полы', required: true },
