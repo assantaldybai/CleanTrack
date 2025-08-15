@@ -29,14 +29,14 @@ const AdminBuildings = () => {
   }, []);
 
   const loadBuildings = () => {
-    const buildingsData = getFromStorage('amp_buildings', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
     setBuildings(buildingsData);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const buildingsData = getFromStorage('amp_buildings', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
     
     if (editingBuilding) {
       // Update existing building
@@ -45,7 +45,7 @@ const AdminBuildings = () => {
           ? { ...formData, id: editingBuilding.id, createdAt: editingBuilding.createdAt }
           : b
       );
-      saveToStorage('amp_buildings', updatedBuildings);
+      saveToStorage('skyx_buildings', updatedBuildings);
       setBuildings(updatedBuildings);
       
       toast({
@@ -63,7 +63,7 @@ const AdminBuildings = () => {
       };
       
       const updatedBuildings = [...buildingsData, newBuilding];
-      saveToStorage('amp_buildings', updatedBuildings);
+      saveToStorage('skyx_buildings', updatedBuildings);
       setBuildings(updatedBuildings);
       
       toast({
@@ -89,9 +89,9 @@ const AdminBuildings = () => {
 
   const handleDelete = (buildingId) => {
     if (window.confirm('Вы уверены, что хотите удалить это здание?')) {
-      const buildingsData = getFromStorage('amp_buildings', []);
+      const buildingsData = getFromStorage('skyx_buildings', []);
       const updatedBuildings = buildingsData.filter(b => b.id !== buildingId);
-      saveToStorage('amp_buildings', updatedBuildings);
+      saveToStorage('skyx_buildings', updatedBuildings);
       setBuildings(updatedBuildings);
       
       toast({

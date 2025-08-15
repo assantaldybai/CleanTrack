@@ -28,10 +28,10 @@ const CleanerDashboard = () => {
   }, [user]);
 
   const loadData = () => {
-    const assignmentsData = getFromStorage('amp_assignments', []);
-    const buildingsData = getFromStorage('amp_buildings', []);
-    const zonesData = getFromStorage('amp_zones', []);
-    const checklistsData = getFromStorage('amp_checklists', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
+    const zonesData = getFromStorage('skyx_zones', []);
+    const checklistsData = getFromStorage('skyx_checklists', []);
     
     // Filter assignments for current user
     const myAssignments = assignmentsData.filter(a => a.cleanerId === user.id);
@@ -68,13 +68,13 @@ const CleanerDashboard = () => {
   };
 
   const handleStartTask = (assignmentId) => {
-    const assignmentsData = getFromStorage('amp_assignments', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
     const updatedAssignments = assignmentsData.map(a => 
       a.id === assignmentId 
         ? { ...a, status: 'in_progress' }
         : a
     );
-    saveToStorage('amp_assignments', updatedAssignments);
+    saveToStorage('skyx_assignments', updatedAssignments);
     
     navigate(`/cleaner/task/${assignmentId}`);
   };

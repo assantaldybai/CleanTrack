@@ -45,11 +45,11 @@ const TaskExecution = () => {
   }, [taskId]);
 
   const loadTaskData = () => {
-    const assignments = getFromStorage('amp_assignments', []);
-    const checklists = getFromStorage('amp_checklists', []);
-    const zones = getFromStorage('amp_zones', []);
-    const buildings = getFromStorage('amp_buildings', []);
-    const completedTasks = getFromStorage('amp_completed_tasks', []);
+    const assignments = getFromStorage('skyx_assignments', []);
+    const checklists = getFromStorage('skyx_checklists', []);
+    const zones = getFromStorage('skyx_zones', []);
+    const buildings = getFromStorage('skyx_buildings', []);
+    const completedTasks = getFromStorage('skyx_completed_tasks', []);
 
     const currentAssignment = assignments.find(a => a.id === taskId);
     if (!currentAssignment) {
@@ -180,7 +180,7 @@ const TaskExecution = () => {
   };
 
   const saveProgress = () => {
-    const completedTasksData = getFromStorage('amp_completed_tasks', []);
+    const completedTasksData = getFromStorage('skyx_completed_tasks', []);
     const existingIndex = completedTasksData.findIndex(ct => ct.assignmentId === taskId);
     
     const taskData = {
@@ -199,16 +199,16 @@ const TaskExecution = () => {
       completedTasksData.push(taskData);
     }
     
-    saveToStorage('amp_completed_tasks', completedTasksData);
+    saveToStorage('skyx_completed_tasks', completedTasksData);
     
     // Update assignment status to in_progress if it was pending
-    const assignments = getFromStorage('amp_assignments', []);
+    const assignments = getFromStorage('skyx_assignments', []);
     const updatedAssignments = assignments.map(a => 
       a.id === taskId && a.status === 'pending'
         ? { ...a, status: 'in_progress' }
         : a
     );
-    saveToStorage('amp_assignments', updatedAssignments);
+    saveToStorage('skyx_assignments', updatedAssignments);
   };
 
   const completeTask = async () => {
@@ -240,7 +240,7 @@ const TaskExecution = () => {
 
     try {
       // Save final task data
-      const completedTasksData = getFromStorage('amp_completed_tasks', []);
+      const completedTasksData = getFromStorage('skyx_completed_tasks', []);
       const existingIndex = completedTasksData.findIndex(ct => ct.assignmentId === taskId);
       
       const taskData = {
@@ -259,16 +259,16 @@ const TaskExecution = () => {
         completedTasksData.push(taskData);
       }
       
-      saveToStorage('amp_completed_tasks', completedTasksData);
+      saveToStorage('skyx_completed_tasks', completedTasksData);
 
       // Update assignment status to completed
-      const assignments = getFromStorage('amp_assignments', []);
+      const assignments = getFromStorage('skyx_assignments', []);
       const updatedAssignments = assignments.map(a => 
         a.id === taskId 
           ? { ...a, status: 'completed', completedAt: new Date().toISOString() }
           : a
       );
-      saveToStorage('amp_assignments', updatedAssignments);
+      saveToStorage('skyx_assignments', updatedAssignments);
 
       toast({
         title: "Задание выполнено!",

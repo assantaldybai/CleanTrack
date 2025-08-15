@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     initializeMockData();
     
     // Проверяем сохраненного пользователя
-    const savedUser = localStorage.getItem('amp_current_user');
+    const savedUser = localStorage.getItem('skyx_current_user');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (username, password) => {
-    const users = getFromStorage('amp_users', []);
+    const users = getFromStorage('skyx_users', []);
     const foundUser = users.find(u => u.username === username && u.password === password);
     
     if (foundUser) {
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
       delete userWithoutPassword.password;
       
       setUser(userWithoutPassword);
-      localStorage.setItem('amp_current_user', JSON.stringify(userWithoutPassword));
+      localStorage.setItem('skyx_current_user', JSON.stringify(userWithoutPassword));
       return { success: true };
     } else {
       return { success: false, error: 'Неверные данные для входа' };
@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('amp_current_user');
+    localStorage.removeItem('skyx_current_user');
   };
 
   const value = {

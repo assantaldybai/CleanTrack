@@ -31,7 +31,7 @@ const AdminChecklists = () => {
   }, []);
 
   const loadChecklists = () => {
-    const checklistsData = getFromStorage('amp_checklists', []);
+    const checklistsData = getFromStorage('skyx_checklists', []);
     setChecklists(checklistsData);
   };
 
@@ -47,7 +47,7 @@ const AdminChecklists = () => {
       return;
     }
     
-    const checklistsData = getFromStorage('amp_checklists', []);
+    const checklistsData = getFromStorage('skyx_checklists', []);
     
     if (editingChecklist) {
       const updatedChecklists = checklistsData.map(c => 
@@ -55,7 +55,7 @@ const AdminChecklists = () => {
           ? { ...formData, id: editingChecklist.id }
           : c
       );
-      saveToStorage('amp_checklists', updatedChecklists);
+      saveToStorage('skyx_checklists', updatedChecklists);
       setChecklists(updatedChecklists);
       
       toast({
@@ -69,7 +69,7 @@ const AdminChecklists = () => {
       };
       
       const updatedChecklists = [...checklistsData, newChecklist];
-      saveToStorage('amp_checklists', updatedChecklists);
+      saveToStorage('skyx_checklists', updatedChecklists);
       setChecklists(updatedChecklists);
       
       toast({
@@ -93,9 +93,9 @@ const AdminChecklists = () => {
 
   const handleDelete = (checklistId) => {
     if (window.confirm('Вы уверены, что хотите удалить этот чек-лист?')) {
-      const checklistsData = getFromStorage('amp_checklists', []);
+      const checklistsData = getFromStorage('skyx_checklists', []);
       const updatedChecklists = checklistsData.filter(c => c.id !== checklistId);
-      saveToStorage('amp_checklists', updatedChecklists);
+      saveToStorage('skyx_checklists', updatedChecklists);
       setChecklists(updatedChecklists);
       
       toast({

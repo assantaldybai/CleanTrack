@@ -14,7 +14,7 @@ export const mockUsers = [
     password: 'cleaner123',
     role: 'cleaner',
     name: 'Мария Иванова',
-    email: 'maria@skyx.com',
+    email: 'maria@company.com',
     phone: '+7 (999) 123-45-67'
   },
   {
@@ -23,7 +23,7 @@ export const mockUsers = [
     password: 'cleaner123',
     role: 'cleaner',
     name: 'Анна Петрова',
-    email: 'anna@skyx.com',
+    email: 'anna@company.com',
     phone: '+7 (999) 765-43-21'
   }
 ];
@@ -183,22 +183,22 @@ export const getFromStorage = (key, defaultValue = []) => {
 
 // Инициализация данных в localStorage
 export const initializeMockData = () => {
-  if (!localStorage.getItem('amp_users')) {
-    saveToStorage('amp_users', mockUsers);
+  if (!localStorage.getItem('skyx_users')) {
+    saveToStorage('skyx_users', mockUsers);
   }
-  if (!localStorage.getItem('amp_buildings')) {
-    saveToStorage('amp_buildings', mockBuildings);
+  if (!localStorage.getItem('skyx_buildings')) {
+    saveToStorage('skyx_buildings', mockBuildings);
   }
-  if (!localStorage.getItem('amp_zones')) {
-    saveToStorage('amp_zones', mockZones);
+  if (!localStorage.getItem('skyx_zones')) {
+    saveToStorage('skyx_zones', mockZones);
   }
-  if (!localStorage.getItem('amp_checklists')) {
-    saveToStorage('amp_checklists', mockChecklists);
+  if (!localStorage.getItem('skyx_checklists')) {
+    saveToStorage('skyx_checklists', mockChecklists);
   }
-  if (!localStorage.getItem('amp_assignments')) {
-    saveToStorage('amp_assignments', mockAssignments);
+  if (!localStorage.getItem('skyx_assignments')) {
+    saveToStorage('skyx_assignments', mockAssignments);
   }
-  if (!localStorage.getItem('amp_completed_tasks')) {
-    saveToStorage('amp_completed_tasks', mockCompletedTasks);
+  if (!localStorage.getItem('skyx_completed_tasks')) {
+    saveToStorage('skyx_completed_tasks', mockCompletedTasks);
   }
 };

@@ -17,11 +17,11 @@ const CleanerHistory = () => {
   }, [user]);
 
   const loadData = () => {
-    const assignmentsData = getFromStorage('amp_assignments', []);
-    const buildingsData = getFromStorage('amp_buildings', []);
-    const zonesData = getFromStorage('amp_zones', []);
-    const checklistsData = getFromStorage('amp_checklists', []);
-    const completedTasksData = getFromStorage('amp_completed_tasks', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
+    const zonesData = getFromStorage('skyx_zones', []);
+    const checklistsData = getFromStorage('skyx_checklists', []);
+    const completedTasksData = getFromStorage('skyx_completed_tasks', []);
     
     // Filter completed assignments for current user
     const myCompletedAssignments = assignmentsData.filter(

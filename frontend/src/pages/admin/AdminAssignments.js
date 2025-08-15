@@ -50,7 +50,7 @@ const AdminAssignments = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const assignmentsData = getFromStorage('amp_assignments', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
     
     if (editingAssignment) {
       const updatedAssignments = assignmentsData.map(a => 
@@ -58,7 +58,7 @@ const AdminAssignments = () => {
           ? { ...formData, id: editingAssignment.id, status: editingAssignment.status, createdAt: editingAssignment.createdAt }
           : a
       );
-      saveToStorage('amp_assignments', updatedAssignments);
+      saveToStorage('skyx_assignments', updatedAssignments);
       
       toast({
         title: "Задание обновлено",
@@ -73,7 +73,7 @@ const AdminAssignments = () => {
       };
       
       const updatedAssignments = [...assignmentsData, newAssignment];
-      saveToStorage('amp_assignments', updatedAssignments);
+      saveToStorage('skyx_assignments', updatedAssignments);
       
       toast({
         title: "Задание создано",
@@ -99,9 +99,9 @@ const AdminAssignments = () => {
 
   const handleDelete = (assignmentId) => {
     if (window.confirm('Вы уверены, что хотите удалить это задание?')) {
-      const assignmentsData = getFromStorage('amp_assignments', []);
+      const assignmentsData = getFromStorage('skyx_assignments', []);
       const updatedAssignments = assignmentsData.filter(a => a.id !== assignmentId);
-      saveToStorage('amp_assignments', updatedAssignments);
+      saveToStorage('skyx_assignments', updatedAssignments);
       
       loadData();
       

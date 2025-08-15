@@ -17,10 +17,10 @@ const AdminDashboard = () => {
   const [recentAssignments, setRecentAssignments] = useState([]);
 
   useEffect(() => {
-    const buildings = getFromStorage('amp_buildings', []);
-    const zones = getFromStorage('amp_zones', []);
-    const cleaners = getFromStorage('amp_users', []).filter(u => u.role === 'cleaner');
-    const assignments = getFromStorage('amp_assignments', []);
+    const buildings = getFromStorage('skyx_buildings', []);
+    const zones = getFromStorage('skyx_zones', []);
+    const cleaners = getFromStorage('skyx_users', []).filter(u => u.role === 'cleaner');
+    const assignments = getFromStorage('skyx_assignments', []);
     
     const today = new Date().toISOString().split('T')[0];
     const todayAssignments = assignments.filter(a => a.scheduledDate === today);
@@ -89,7 +89,7 @@ const AdminDashboard = () => {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Панель управления</h1>
-        <p className="text-gray-600 mt-1">Обзор системы управления уборкой AMP</p>
+        <p className="text-gray-600 mt-1">Обзор системы управления уборкой SKY X</p>
       </div>
 
       {/* Stats Grid */}

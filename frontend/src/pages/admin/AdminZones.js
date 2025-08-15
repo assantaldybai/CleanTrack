@@ -32,8 +32,8 @@ const AdminZones = () => {
   }, []);
 
   const loadData = () => {
-    const zonesData = getFromStorage('amp_zones', []);
-    const buildingsData = getFromStorage('amp_buildings', []);
+    const zonesData = getFromStorage('skyx_zones', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
     setZones(zonesData);
     setBuildings(buildingsData);
   };
@@ -41,7 +41,7 @@ const AdminZones = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const zonesData = getFromStorage('amp_zones', []);
+    const zonesData = getFromStorage('skyx_zones', []);
     
     if (editingZone) {
       const updatedZones = zonesData.map(z => 
@@ -55,7 +55,7 @@ const AdminZones = () => {
             }
           : z
       );
-      saveToStorage('amp_zones', updatedZones);
+      saveToStorage('skyx_zones', updatedZones);
       setZones(updatedZones);
       
       toast({
@@ -72,7 +72,7 @@ const AdminZones = () => {
       };
       
       const updatedZones = [...zonesData, newZone];
-      saveToStorage('amp_zones', updatedZones);
+      saveToStorage('skyx_zones', updatedZones);
       setZones(updatedZones);
       
       toast({
@@ -99,9 +99,9 @@ const AdminZones = () => {
 
   const handleDelete = (zoneId) => {
     if (window.confirm('Вы уверены, что хотите удалить эту зону?')) {
-      const zonesData = getFromStorage('amp_zones', []);
+      const zonesData = getFromStorage('skyx_zones', []);
       const updatedZones = zonesData.filter(z => z.id !== zoneId);
-      saveToStorage('amp_zones', updatedZones);
+      saveToStorage('skyx_zones', updatedZones);
       setZones(updatedZones);
       
       toast({

@@ -26,7 +26,7 @@ const Login = () => {
     
     if (result.success) {
       // Redirect based on user role
-      const users = JSON.parse(localStorage.getItem('amp_users') || '[]');
+      const users = JSON.parse(localStorage.getItem('skyx_users') || '[]');
       const user = users.find(u => u.username === username);
       
       if (user?.role === 'admin') {

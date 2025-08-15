@@ -30,9 +30,9 @@ const AdminCleaners = () => {
   }, []);
 
   const loadData = () => {
-    const users = getFromStorage('amp_users', []);
+    const users = getFromStorage('skyx_users', []);
     const cleanersData = users.filter(u => u.role === 'cleaner');
-    const assignmentsData = getFromStorage('amp_assignments', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
     setCleaners(cleanersData);
     setAssignments(assignmentsData);
   };
@@ -40,7 +40,7 @@ const AdminCleaners = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const users = getFromStorage('amp_users', []);
+    const users = getFromStorage('skyx_users', []);
     
     // Check if username already exists
     if (!editingCleaner && users.some(u => u.username === formData.username)) {
@@ -58,7 +58,7 @@ const AdminCleaners = () => {
           ? { ...formData, id: editingCleaner.id, role: 'cleaner' }
           : u
       );
-      saveToStorage('amp_users', updatedUsers);
+      saveToStorage('skyx_users', updatedUsers);
       
       toast({
         title: "Уборщик обновлен",
@@ -72,7 +72,7 @@ const AdminCleaners = () => {
       };
       
       const updatedUsers = [...users, newCleaner];
-      saveToStorage('amp_users', updatedUsers);
+      saveToStorage('skyx_users', updatedUsers);
       
       toast({
         title: "Уборщик добавлен",
@@ -98,14 +98,14 @@ const AdminCleaners = () => {
 
   const handleDelete = (cleanerId) => {
     if (window.confirm('Вы уверены, что хотите удалить этого уборщика?')) {
-      const users = getFromStorage('amp_users', []);
+      const users = getFromStorage('skyx_users', []);
       const updatedUsers = users.filter(u => u.id !== cleanerId);
-      saveToStorage('amp_users', updatedUsers);
+      saveToStorage('skyx_users', updatedUsers);
       
       // Also remove assignments for this cleaner
-      const assignmentsData = getFromStorage('amp_assignments', []);
+      const assignmentsData = getFromStorage('skyx_assignments', []);
       const updatedAssignments = assignmentsData.filter(a => a.cleanerId !== cleanerId);
-      saveToStorage('amp_assignments', updatedAssignments);
+      saveToStorage('skyx_assignments', updatedAssignments);
       
       loadData();
       
