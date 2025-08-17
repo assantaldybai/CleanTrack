@@ -33,11 +33,11 @@ const AdminAssignments = () => {
   }, []);
 
   const loadData = () => {
-    const assignmentsData = getFromStorage('amp_assignments', []);
-    const buildingsData = getFromStorage('amp_buildings', []);
-    const zonesData = getFromStorage('amp_zones', []);
-    const checklistsData = getFromStorage('amp_checklists', []);
-    const users = getFromStorage('amp_users', []);
+    const assignmentsData = getFromStorage('skyx_assignments', []);
+    const buildingsData = getFromStorage('skyx_buildings', []);
+    const zonesData = getFromStorage('skyx_zones', []);
+    const checklistsData = getFromStorage('skyx_checklists', []);
+    const users = getFromStorage('skyx_users', []);
     const cleanersData = users.filter(u => u.role === 'cleaner');
     
     setAssignments(assignmentsData);

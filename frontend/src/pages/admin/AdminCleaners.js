@@ -203,7 +203,7 @@ const AdminCleaners = () => {
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="maria@amp.com"
+                  placeholder="maria@company.com"
                 />
               </div>
               
