@@ -101,3 +101,48 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Beta SaaS-платформа SKYX для контроля уборки: кабинеты супер-админа SaaS, организации, клининговой компании и клинера; регистрация/создание аккаунтов без email/телефона; обязательная RLS/tenant isolation; финал включает аналитику/KPI."
+backend:
+  - task: "SKYX beta backend: auth, roles, RLS, tenants, cleaning workflow, reports, analytics"
+    implemented: true
+    working: false
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented FastAPI beta API with username/password auth, JWT, roles super_admin/organization_admin/cleaning_company_admin/cleaner, Mongo UUID entities, backend RLS filters by organization_id/cleaning_company_id/cleaner_user_id, organizations, cleaning companies, users, buildings, zones, checklists, assignments, assignment reporting and analytics overview. Seeded demo accounts and demo workflow. Created /app/backend/.env because the expected env file was missing; values use local MongoDB and env-based DB_NAME."
+      - working: false
+        agent: "testing"
+        comment: "CRITICAL ISSUE: Backend APIs work perfectly on localhost:8001 (19/20 tests passed, 95% success rate) but external URL https://demobackend.emergentagent.com is completely non-functional - returns 'Route not found' for all endpoints. This is an infrastructure/routing issue preventing frontend-backend communication. All backend functionality verified: ✅ Auth login for all 4 roles, ✅ /api/auth/me with tokens, ✅ RLS isolation (org admin sees only org data, cleaning admin sees only company tasks, cleaner sees only own tasks), ✅ Super admin creates org/company/accounts without email/phone, ✅ Org admin creates building/zone/checklist/assignment, ✅ Cleaning admin creates cleaner and assigns task, ✅ Cleaner starts task and submits report (status becomes completed), ✅ Analytics returns correct KPIs for all roles. Minor: Unauthorized access returns 403 instead of 401 (acceptable). Test file: /app/backend_test.py"
+frontend:
+  - task: "SKYX beta frontend: role-based cabinets and API integration"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented API-based auth context, login page with four demo roles, role routing, shared layout, Super Admin cabinet, Organization cabinet, Cleaning Company cabinet, Cleaner cabinet. Frontend lint passes. Frontend testing requires explicit user permission after backend testing."
+metadata:
+  created_by: "main_agent"
+  version: "0.2-beta"
+  test_sequence: 2
+  run_ui: false
+test_plan:
+  current_focus:
+    - "SKYX beta backend: auth, roles, RLS, tenants, cleaning workflow, reports, analytics"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+agent_communication:
+  - agent: "main"
+    message: "Backend ready for testing. Use /app/memory/test_credentials.md demo accounts. Test login for all roles, RLS isolation (org admin only org data, cleaning admin only company tasks, cleaner only own tasks), organization creates building/zone/checklist/assignment, cleaning admin creates cleaner and assigns task, cleaner starts task/submits report, analytics updates. Do not perform frontend UI tests yet."
+  - agent: "testing"
+    message: "Backend testing complete. CRITICAL INFRASTRUCTURE ISSUE: External URL https://demobackend.emergentagent.com is not routing to backend - all requests return 'Route not found'. Backend code is fully functional on localhost:8001 with 95% test success rate. All 7 test scenarios passed: auth, RLS isolation, super admin workflows, org admin workflows, cleaning admin workflows, cleaner workflows, and analytics. The external URL routing must be fixed for frontend to communicate with backend. This is NOT a backend code issue but an infrastructure/Kubernetes ingress/nginx routing configuration problem."
