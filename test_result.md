@@ -174,14 +174,18 @@ frontend:
         agent: "main"
         comment: "Applied TOC/ЦКП control-first frontend redesign: dashboards now start with primary constraint, next action and exception/control panels. Super-admin sees platform constraint and risky tenants before setup; organization sees overdue/today/quality control before setup; cleaning sees unassigned/overdue/today dispatch control before team setup; cleaner sees immediate 'what to do now' card before task list. CRUD/setup blocks were visually demoted under 'Настройка'. JS lint passes."
 
+      - working: true
+        agent: "testing"
+        comment: "✅ TOC/ЦКП CONTROL-FIRST REDESIGN FULLY VERIFIED: All 4 role dashboards tested with browser automation. CRITICAL BUG FIXED: CleaningCabinet.js had ControlTile component defined between return statement and function closing, causing 'Cannot access ControlTile before initialization' ReferenceError and red screen crash. Fixed by moving component definition outside main function. Test results: (1) Login: 3 demo buttons only, NO super-admin button ✓. (2) Super-admin: Control-first verified - 'Главное ограничение' card (y=346) appears BEFORE 'Настройка' divider (y=475), 'Требует внимания' card visible, all metrics/forms/sections present ✓. (3) Organization: Control-first verified - 'Главное ограничение' (y=332) before 'Настройка' (y=524), 'Отклонения' with Просрочено/Сегодня/Качество tiles visible ✓. (4) Cleaning: Control-first verified after fix - 'Главное ограничение' (y=340) before 'Настройка' (y=920), 'Диспетчеризация' with Без клинера/Просрочено/Сегодня tiles visible ✓. (5) Cleaner: 'Что делать сейчас' card with mini stats visible before task list ✓. (6) Security: Role redirects working correctly ✓. (7) Console: No critical errors ✓. All requirements met. Frontend production-ready."
+
 metadata:
   created_by: "main_agent"
   version: "0.2-beta"
-  test_sequence: 4
+  test_sequence: 5
   run_ui: true
 test_plan:
   current_focus:
-    - "All testing complete - frontend and backend fully functional"
+    - "Full frontend UI testing for TOC/ЦКП control-first redesign approved by user"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -204,3 +208,10 @@ agent_communication:
 
   - agent: "testing"
     message: "✅ FULL FRONTEND UI TESTING COMPLETE - ALL TESTS PASSED: Comprehensive browser automation testing completed successfully for all 4 roles (super admin, organization admin, cleaning company admin, cleaner) and security controls. Key findings: (1) Login page: 3 demo buttons visible (org/cleaning/cleaner), NO super admin button/placeholder, demo buttons work. (2) Super Admin: manual login works, SaaS Command Center fully functional with platform metrics, creation forms, management sections, NO verbose clutter. (3) Organization Admin: cabinet loads with metrics, all 4 creation forms, assignments visible. (4) Cleaning Company Admin: cabinet loads with metrics, add cleaner form, team section, assignment controls. (5) Cleaner: cabinet loads with metrics, task cards, controls visible. (6) Security: role-based access control working correctly - lower roles cannot access /super-admin (redirected to their role home). No console errors detected. All user requirements met. Frontend is production-ready."
+
+
+  - agent: "main"
+    message: "User approved full UI testing after TOC/ЦКП control-first redesign. Test all roles again, focusing that each dashboard starts with control/constraint/next-action panels before setup/CRUD: super-admin primary constraint + attention/risky tenants before setup; organization overdue/today/quality and main constraint before setup; cleaning unassigned/overdue/today dispatch before cleaner creation; cleaner 'Что делать сейчас' before task list. Also ensure previous security requirements remain: no super-admin demo button, role redirects work."
+
+  - agent: "testing"
+    message: "✅ TOC/ЦКП CONTROL-FIRST REDESIGN TESTING COMPLETE - ALL TESTS PASSED: Comprehensive browser automation testing completed for all 4 roles after control-first redesign. CRITICAL BUG FOUND AND FIXED: CleaningCabinet.js had component structure error (ControlTile defined between return and function closing) causing 'Cannot access ControlTile before initialization' runtime error and red screen crash. Fixed by moving ControlTile outside main component. Test results: (1) Login page: ✅ 3 demo buttons only (ОРГАНИЗАЦИЯ, КЛИНИНГ, КЛИНЕР), NO super-admin button/placeholder. (2) Super-admin: ✅ Control-first layout verified - 'Главное ограничение' (y=346) appears BEFORE 'Настройка' divider (y=475), 'Требует внимания' card visible, all platform metrics visible (Health, Orgs, Companies, Users, Tasks, Risks), setup forms visible after divider, management sections visible. (3) Organization: ✅ Control-first layout verified - 'Главное ограничение' (y=332) appears BEFORE 'Настройка' divider (y=524), 'Отклонения' card visible with all 3 tiles (Просрочено, Сегодня, Качество), setup forms visible after divider. (4) Cleaning: ✅ Control-first layout verified AFTER FIX - 'Главное ограничение' (y=340) appears BEFORE 'Настройка' divider (y=920), 'Диспетчеризация' card visible with all 3 tiles (Без клинера, Просрочено, Сегодня), tasks section visible, setup forms visible after divider. (5) Cleaner: ✅ 'Что делать сейчас' card visible with mini stats (Просрочено, Сегодня) before task list, task cards/controls visible. (6) Security: ✅ Role-based access control working - cleaner redirected from /super-admin to /cleaner, org admin redirected from /super-admin to /organization. (7) Console: ✅ No critical errors detected. All user requirements met. Frontend is production-ready with TOC/ЦКП control-first design."

@@ -163,6 +163,8 @@ const CleaningCabinet = () => {
 
     </div>
   );
+};
+
 const ControlTile = ({ icon: Icon, label, value, tone }) => (
   <div className={`rounded-2xl border p-4 ${tone === 'red' ? 'bg-red-50 text-red-800' : 'bg-yellow-50 text-black'}`}>
     <Icon className="h-5 w-5" />
@@ -170,9 +172,6 @@ const ControlTile = ({ icon: Icon, label, value, tone }) => (
     <div className="text-3xl font-black">{value}</div>
   </div>
 );
-
-
-};
 
 const Metric = ({ icon: Icon, label, value }) => <Card><CardContent className="p-4"><Icon className="h-5 w-5 text-yellow-600" /><p className="text-sm text-gray-500 mt-2">{label}</p><p className="text-2xl font-black">{value ?? 0}</p></CardContent></Card>;
 
