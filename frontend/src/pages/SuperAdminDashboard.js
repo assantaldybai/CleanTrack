@@ -4,7 +4,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
 import { apiRequest, roleLabel } from '../lib/api';
-import { Activity, AlertTriangle, Ban, Building2, CheckCircle2, Link2, Plus, ShieldCheck, Sparkles, Users } from 'lucide-react';
+import { Activity, AlertTriangle, Ban, Building2, CheckCircle2, Link2, Plus, ShieldCheck, Sparkles, Target, Users } from 'lucide-react';
 
 const emptyOrg = { name: '', inn: '', city: '', subscription_plan: 'beta', notes: '' };
 const emptyCompany = { name: '', type: 'company', organization_id: '', subscription_plan: 'beta', notes: '' };
@@ -146,6 +146,21 @@ const SuperAdminDashboard = () => {
   );
 
   const platform = command.platform || {};
+  const topRiskOrganizations = command.organizations.filter((entry) => entry.risks?.length).slice(0, 3);
+  const topRiskCompanies = command.cleaning_companies.filter((entry) => entry.risks?.length).slice(0, 3);
+  const primaryConstraint = platform.risk_tenants > 0
+    ? 'Рисковые tenant-ы'
+    : platform.overdue > 0
+      ? 'Просроченные задачи'
+      : platform.organizations_suspended > 0
+        ? 'Приостановленные организации'
+        : 'Система стабильна';
+  const nextAction = platform.risk_tenants > 0
+    ? 'Открыть рисковые карточки ниже'
+    : platform.overdue > 0
+      ? 'Разобрать просрочки'
+      : 'Поддерживать контроль';
+
 
   return (
     <div className="space-y-6">
@@ -165,6 +180,45 @@ const SuperAdminDashboard = () => {
         <Metric label="Пользователей" value={platform.users_total} icon={Users} hint={`${platform.active_users || 0} active`} />
         <Metric label="Задач" value={platform.assignments_total} icon={ShieldCheck} hint={`${platform.completion_rate || 0}% done`} />
         <Metric label="Рисков" value={platform.risk_tenants} icon={AlertTriangle} tone="black" hint={`${platform.overdue || 0} overdue`} />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="border-2 border-black bg-black text-white xl:col-span-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Главное ограничение</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black">{primaryConstraint}</div>
+            <div className="mt-3 text-yellow-100 font-semibold">{nextAction}</div>
+          </CardContent>
+        </Card>
+        <Card className="xl:col-span-2">
+          <CardHeader><CardTitle>Требует внимания</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[...topRiskOrganizations, ...topRiskCompanies].map((entry) => {
+              const item = entry.organization || entry.company;
+              return (
+                <div key={item.id} className="rounded-xl border bg-gray-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <b>{item.name}</b>
+                    <Badge className={statusClass[item.status || 'active']}>{statusLabels[item.status || 'active']}</Badge>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {entry.risks.map((risk) => <Badge key={risk} className="bg-red-100 text-red-800">{risk}</Badge>)}
+                  </div>
+                </div>
+              );
+            })}
+            {topRiskOrganizations.length + topRiskCompanies.length === 0 && <div className="rounded-xl border bg-green-50 p-4 font-bold text-green-800">Критичных отклонений нет</div>}
+          </CardContent>
+
+      <div className="flex items-center gap-3 pt-2">
+        <div className="h-px bg-gray-200 flex-1"></div>
+        <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Настройка</span>
+        <div className="h-px bg-gray-200 flex-1"></div>
+      </div>
+
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

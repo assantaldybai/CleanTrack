@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { apiRequest } from '../lib/api';
-import { CheckCircle2, ClipboardCheck, Play, Star } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, ClipboardCheck, Play, Star, Target } from 'lucide-react';
 
 const CleanerCabinet = () => {
   const [assignments, setAssignments] = useState([]);
@@ -72,6 +72,20 @@ const CleanerCabinet = () => {
     }
   };
 
+  const today = new Date().toISOString().split('T')[0];
+  const activeAssignments = assignments.filter((item) => item.status !== 'completed');
+  const overdueAssignments = activeAssignments.filter((item) => item.scheduled_date < today);
+  const todayAssignments = activeAssignments.filter((item) => item.scheduled_date === today);
+  const nextAssignment = overdueAssignments[0] || todayAssignments[0] || activeAssignments[0];
+  const primaryFocus = overdueAssignments.length > 0
+    ? 'Сначала просрочка'
+    : todayAssignments.length > 0
+      ? 'Задача на сегодня'
+      : nextAssignment
+        ? 'Следующая задача'
+        : 'Все сдано';
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -84,6 +98,23 @@ const CleanerCabinet = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Metric icon={ClipboardCheck} label="Моих задач" value={analytics.assignments_total} />
         <Metric icon={CheckCircle2} label="Выполнено" value={analytics.completed} />
+
+      <Card className="border-2 border-black bg-black text-white">
+        <CardHeader><CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Что делать сейчас</CardTitle></CardHeader>
+        <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <div className="text-3xl font-black">{primaryFocus}</div>
+            <div className="mt-3 text-yellow-100 font-semibold">
+              {nextAssignment ? `${nextAssignment.title} • ${nextAssignment.building_name} • ${nextAssignment.zone_name}` : 'Активных задач нет'}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <MiniStat icon={AlertTriangle} label="Просрочено" value={overdueAssignments.length} />
+            <MiniStat icon={ClipboardCheck} label="Сегодня" value={todayAssignments.length} />
+          </div>
+        </CardContent>
+      </Card>
+
         <Metric icon={Star} label="Средняя оценка" value={analytics.average_quality || 0} />
       </div>
 
@@ -96,7 +127,7 @@ const CleanerCabinet = () => {
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                   <div>
                     <CardTitle>{assignment.title}</CardTitle>
-                    <CardDescription>{assignment.organization_name} • {assignment.building_name} • {assignment.zone_name} • {assignment.scheduled_date} {assignment.scheduled_time}</CardDescription>
+                    <div className="text-sm text-gray-600">{assignment.organization_name} • {assignment.building_name} • {assignment.zone_name} • {assignment.scheduled_date} {assignment.scheduled_time}</div>
                   </div>
                   <Badge>{assignment.status}</Badge>
                 </div>
@@ -136,5 +167,14 @@ const CleanerCabinet = () => {
 };
 
 const Metric = ({ icon: Icon, label, value }) => <Card><CardContent className="p-4"><Icon className="h-5 w-5 text-yellow-600" /><p className="text-sm text-gray-500 mt-2">{label}</p><p className="text-2xl font-black">{value ?? 0}</p></CardContent></Card>;
+const MiniStat = ({ icon: Icon, label, value }) => (
+  <div className="rounded-xl border border-yellow-400/40 bg-yellow-400/10 p-3">
+    <Icon className="h-5 w-5 text-yellow-400" />
+    <div className="text-xs font-bold text-yellow-100 mt-2">{label}</div>
+    <div className="text-2xl font-black text-white">{value}</div>
+  </div>
+);
+
+
 
 export default CleanerCabinet;

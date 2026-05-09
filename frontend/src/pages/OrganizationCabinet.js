@@ -2,10 +2,9 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { apiRequest } from '../lib/api';
-import { BarChart3, Building2, CheckSquare, ClipboardList, MapPin, Plus } from 'lucide-react';
+import { AlertTriangle, BarChart3, Building2, CheckSquare, ClipboardList, MapPin, Plus, Target } from 'lucide-react';
 
 const OrganizationCabinet = () => {
   const [analytics, setAnalytics] = useState({});
@@ -66,6 +65,20 @@ const OrganizationCabinet = () => {
   };
   const createAssignment = () => apiRequest('/assignments', { method: 'POST', body: JSON.stringify(assignmentForm) });
 
+
+  const today = new Date().toISOString().split('T')[0];
+  const overdueTasks = assignments.filter((item) => item.scheduled_date < today && item.status !== 'completed');
+  const todayTasks = assignments.filter((item) => item.scheduled_date === today && item.status !== 'completed');
+  const openTasks = assignments.filter((item) => item.status !== 'completed');
+  const nextTask = overdueTasks[0] || todayTasks[0] || openTasks[0];
+  const primaryConstraint = overdueTasks.length > 0
+    ? 'Просрочки'
+    : todayTasks.length > 0
+      ? 'Сегодняшние задачи'
+      : analytics.average_quality && analytics.average_quality < 4
+        ? 'Качество ниже нормы'
+        : 'Территории под контролем';
+
   return (
     <div className="space-y-6">
       <div>
@@ -81,6 +94,31 @@ const OrganizationCabinet = () => {
         <Metric icon={CheckSquare} label="Чек-листов" value={checklists.length} />
         <Metric icon={ClipboardList} label="Задач" value={analytics.assignments_total} />
         <Metric icon={BarChart3} label="Выполнение" value={`${analytics.completion_rate || 0}%`} />
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="border-2 border-black bg-black text-white">
+          <CardHeader><CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Главное ограничение</CardTitle></CardHeader>
+          <CardContent>
+            <div className="text-3xl font-black">{primaryConstraint}</div>
+            <div className="mt-3 text-yellow-100 font-semibold">{nextTask ? `${nextTask.title} • ${nextTask.zone_name}` : 'Новых действий нет'}</div>
+          </CardContent>
+        </Card>
+        <Card className="xl:col-span-2">
+          <CardHeader><CardTitle>Отклонения</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <ControlTile icon={AlertTriangle} label="Просрочено" value={overdueTasks.length} tone="red" />
+            <ControlTile icon={ClipboardList} label="Сегодня" value={todayTasks.length} tone="yellow" />
+            <ControlTile icon={CheckSquare} label="Качество" value={analytics.average_quality || 0} tone="green" />
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex items-center gap-3 pt-2">
+        <div className="h-px bg-gray-200 flex-1"></div>
+        <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Настройка</span>
+        <div className="h-px bg-gray-200 flex-1"></div>
+      </div>
+
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
@@ -143,5 +181,14 @@ const OrganizationCabinet = () => {
 const Metric = ({ icon: Icon, label, value }) => <Card><CardContent className="p-4"><Icon className="h-5 w-5 text-yellow-600" /><p className="text-sm text-gray-500 mt-2">{label}</p><p className="text-2xl font-black">{value ?? 0}</p></CardContent></Card>;
 const FormCard = ({ title, onSubmit, children }) => <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent><form onSubmit={onSubmit} className="space-y-3">{children}</form></CardContent></Card>;
 const AssignmentRow = ({ item }) => <div className="rounded-xl border bg-gray-50 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><div className="font-bold">{item.title}</div><div className="text-sm text-gray-600">{item.building_name} • {item.zone_name} • {item.cleaning_company_name}</div><div className="text-xs text-gray-500">{item.scheduled_date} {item.scheduled_time} • клинер: {item.cleaner_name}</div></div><Badge>{item.status}</Badge></div>;
+const ControlTile = ({ icon: Icon, label, value, tone }) => (
+  <div className={`rounded-2xl border p-4 ${tone === 'red' ? 'bg-red-50 text-red-800' : tone === 'green' ? 'bg-green-50 text-green-800' : 'bg-yellow-50 text-black'}`}>
+    <Icon className="h-5 w-5" />
+    <div className="text-sm font-bold mt-2">{label}</div>
+    <div className="text-3xl font-black">{value}</div>
+  </div>
+);
+
+
 
 export default OrganizationCabinet;

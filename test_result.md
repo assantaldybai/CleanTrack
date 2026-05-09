@@ -166,6 +166,14 @@ frontend:
         agent: "testing"
         comment: "✅ FULL FRONTEND UI TEST PASSED (100% success): Comprehensive browser automation testing completed for all roles and security. Test results: ✅ Login page loads correctly with 3 demo buttons (ОРГАНИЗАЦИЯ, КЛИНИНГ, КЛИНЕР), NO super admin button or placeholder visible, demo buttons work correctly. ✅ Super Admin dashboard: manual login works, redirects to /super-admin, SaaS Command Center visible with platform metrics (Health: 100, Orgs: 2, Companies: 2, Users: 8, Tasks: 2, Risks: 0), all creation forms visible (org/company/user), management sections visible (orgs/companies/users/audit), NO verbose clutter detected. ✅ Organization Admin cabinet: login works, redirects to /organization, metrics visible (Objects: 2, Zones: 2, Checklists: 2, Tasks: 2, Completion: 50%), all 4 creation forms visible, assignments section with 2 tasks. ✅ Cleaning Company Admin cabinet: login works, redirects to /cleaning, metrics visible (Tasks: 2, Cleaners: 2, Completed: 1, Quality: 5), add cleaner form visible, team section showing 2 cleaners, assignments section with assignment controls (Назначить клинера dropdown). ✅ Cleaner cabinet: login works, redirects to /cleaner, metrics visible (My tasks: 1, Completed: 1, Quality: 5), task card with completed status visible, task controls present. ✅ Role-based security: super admin can access /super-admin, cleaner CANNOT access /super-admin (redirected to /cleaner), org admin CANNOT access /super-admin (redirected to /organization). No console errors, network errors are only CDN/Cloudflare monitoring (not critical). Screenshots saved: .screenshots/role_super_admin.png, org_admin_cabinet.png, cleaning_admin_cabinet.png, cleaner_cabinet.png, cleaner_security.png"
 
+      - working: false
+        agent: "user"
+        comment: "Product/TOC feedback: frontend is structurally wrong because it is CRUD-first. Each role must close its primary job-to-be-done / Hubbard valuable final product: control of cleaning outcomes, bottlenecks and next actions, not creating roles/buildings first. User confirmed control-first redesign for all cabinets."
+
+      - working: "NA"
+        agent: "main"
+        comment: "Applied TOC/ЦКП control-first frontend redesign: dashboards now start with primary constraint, next action and exception/control panels. Super-admin sees platform constraint and risky tenants before setup; organization sees overdue/today/quality control before setup; cleaning sees unassigned/overdue/today dispatch control before team setup; cleaner sees immediate 'what to do now' card before task list. CRUD/setup blocks were visually demoted under 'Настройка'. JS lint passes."
+
 metadata:
   created_by: "main_agent"
   version: "0.2-beta"
