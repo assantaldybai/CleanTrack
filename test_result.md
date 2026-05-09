@@ -137,6 +137,10 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Implemented API-based auth context, login page with four demo roles, role routing, shared layout, Super Admin cabinet, Organization cabinet, Cleaning Company cabinet, Cleaner cabinet. Frontend lint passes. Frontend testing requires explicit user permission after backend testing."
+      - working: false
+        agent: "user"
+        comment: "User feedback: super admin must not feel like a mock/MVP shortcut. Expected a fully worked SaaS super-admin role with production-grade depth; current implementation is considered insufficient for 'final' product quality."
+
 metadata:
   created_by: "main_agent"
   version: "0.2-beta"
