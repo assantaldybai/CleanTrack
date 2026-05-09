@@ -149,6 +149,14 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Security fix applied: removed super-admin from public demo access buttons on Login UI, changed placeholder so it no longer suggests superadmin, added notice that super-admin access is only via internally issued credentials. Demo buttons remain only for organization, cleaning company and cleaner roles. JS lint passes."
+      - working: false
+        agent: "user"
+        comment: "User feedback: frontend contains too much unnecessary visible explanatory copy/comments. Need remove clutter and keep UI concise/professional."
+      - working: "NA"
+        agent: "main"
+        comment: "Frontend cleanup applied after user feedback: removed visible explanatory clutter from active UI, removed public super-admin security note block, removed RLS/backend/beta helper copy from login/layout, simplified role cabinet headers and cards. Demo buttons remain only for org/cleaning/cleaner. JS lint passes. Frontend UI test still requires explicit user permission."
+
+
 
 
       - working: "NA"

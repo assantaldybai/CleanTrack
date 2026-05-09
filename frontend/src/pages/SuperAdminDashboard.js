@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -153,13 +153,6 @@ const SuperAdminDashboard = () => {
         <div>
           <p className="text-sm font-black uppercase tracking-[0.35em] text-yellow-600">SKYX SaaS Command Center</p>
           <h1 className="text-4xl font-black text-gray-950">Супер-админ платформы</h1>
-          <p className="text-gray-600 mt-2 max-w-3xl">
-            Полный операционный контур SaaS: tenant lifecycle, тарифы и лимиты, связи заказчик-клининг, пользователи, аудит, риски и KPI всей платформы.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge className="bg-black text-yellow-400 text-sm px-4 py-2">RLS enforced backend-side</Badge>
-          <Badge className="bg-yellow-400 text-black text-sm px-4 py-2 border-2 border-black">Без email/телефона: login + password</Badge>
         </div>
       </div>
 
@@ -177,8 +170,7 @@ const SuperAdminDashboard = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="border-2 border-black/10">
           <CardHeader>
-            <CardTitle>Создать организацию-заказчика</CardTitle>
-            <CardDescription>Tenant заказчика: объекты, зоны, задания и SLA.</CardDescription>
+            <CardTitle>Создать организацию</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => submit(e, createOrg, 'Организация создана')} className="space-y-3">
@@ -189,15 +181,14 @@ const SuperAdminDashboard = () => {
                 {plans.map((plan) => <option key={plan} value={plan}>{plan}</option>)}
               </select>
               <Input placeholder="Заметка" value={orgForm.notes} onChange={(e) => setOrgForm({ ...orgForm, notes: e.target.value })} />
-              <Button disabled={loading} className="w-full bg-black text-yellow-400 hover:bg-gray-900"><Plus className="h-4 w-4 mr-2" />Создать tenant</Button>
+              <Button disabled={loading} className="w-full bg-black text-yellow-400 hover:bg-gray-900"><Plus className="h-4 w-4 mr-2" />Создать</Button>
             </form>
           </CardContent>
         </Card>
 
         <Card className="border-2 border-black/10">
           <CardHeader>
-            <CardTitle>Создать клинингового оператора</CardTitle>
-            <CardDescription>Отдельный tenant исполнителя с командой клинеров.</CardDescription>
+            <CardTitle>Создать клининг</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => submit(e, createCompany, 'Клининг создан')} className="space-y-3">
@@ -211,15 +202,14 @@ const SuperAdminDashboard = () => {
               </select>
               <Input placeholder="Тип: company/private" value={companyForm.type} onChange={(e) => setCompanyForm({ ...companyForm, type: e.target.value })} />
               <Input placeholder="Заметка" value={companyForm.notes} onChange={(e) => setCompanyForm({ ...companyForm, notes: e.target.value })} />
-              <Button disabled={loading} className="w-full bg-yellow-400 text-black hover:bg-yellow-500 border-2 border-black"><Plus className="h-4 w-4 mr-2" />Создать оператора</Button>
+              <Button disabled={loading} className="w-full bg-yellow-400 text-black hover:bg-yellow-500 border-2 border-black"><Plus className="h-4 w-4 mr-2" />Создать</Button>
             </form>
           </CardContent>
         </Card>
 
         <Card className="border-2 border-black/10">
           <CardHeader>
-            <CardTitle>Создать аккаунт роли</CardTitle>
-            <CardDescription>Системное создание без email/телефона. Все действия попадают в аудит.</CardDescription>
+            <CardTitle>Создать аккаунт</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={(e) => submit(e, createUser, 'Пользователь создан')} className="space-y-3">
@@ -242,8 +232,7 @@ const SuperAdminDashboard = () => {
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Tenant lifecycle организаций</CardTitle>
-            <CardDescription>Статусы, планы, лимиты, usage и риск-профиль каждой организации.</CardDescription>
+            <CardTitle>Организации</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[760px] overflow-auto">
             {command.organizations.map((entry) => <OrganizationCard key={entry.organization.id} entry={entry} onStatus={updateOrgStatus} onPlan={updateOrgPlan} />)}
@@ -252,8 +241,7 @@ const SuperAdminDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Клининговые операторы и связи</CardTitle>
-            <CardDescription>Контроль исполнителей, статусов, тарифов и связей организация ↔ клининг.</CardDescription>
+            <CardTitle>Клининги</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 max-h-[760px] overflow-auto">
             {command.cleaning_companies.map((entry) => (
@@ -266,8 +254,7 @@ const SuperAdminDashboard = () => {
       <div className="grid grid-cols-1 2xl:grid-cols-3 gap-6">
         <Card className="2xl:col-span-2">
           <CardHeader>
-            <CardTitle>Пользователи и доступы</CardTitle>
-            <CardDescription>Супер-админ управляет активностью аккаунтов без обхода RLS.</CardDescription>
+            <CardTitle>Пользователи</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[520px] overflow-auto">
             {users.map((item) => (
@@ -288,8 +275,7 @@ const SuperAdminDashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Аудит действий</CardTitle>
-            <CardDescription>Неподделываемый след действий супер-админа и системы.</CardDescription>
+            <CardTitle>Аудит</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 max-h-[520px] overflow-auto">
             {command.recent_audit.map((item) => (

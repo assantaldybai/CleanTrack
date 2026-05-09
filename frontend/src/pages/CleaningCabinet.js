@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Badge } from '../components/ui/badge';
@@ -62,7 +62,6 @@ const CleaningCabinet = () => {
       <div>
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-yellow-600">Cleaning operator workspace</p>
         <h1 className="text-4xl font-black text-gray-950">Кабинет клининга</h1>
-        <p className="text-gray-600 mt-2">Входящие задачи от организаций, распределение по клинерам и контроль выполнения.</p>
       </div>
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
@@ -76,7 +75,7 @@ const CleaningCabinet = () => {
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card>
-          <CardHeader><CardTitle>Добавить клинера</CardTitle><CardDescription>Без email и телефона — только логин и пароль.</CardDescription></CardHeader>
+          <CardHeader><CardTitle>Добавить клинера</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={createCleaner} className="space-y-3">
               <Input placeholder="Логин" value={cleanerForm.username} onChange={(e) => setCleanerForm({ ...cleanerForm, username: e.target.value })} required />
@@ -97,7 +96,7 @@ const CleaningCabinet = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Задачи от организаций</CardTitle><CardDescription>RLS: видны только задачи вашей клининговой компании.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Задачи от организаций</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {assignments.map((item) => (
             <div key={item.id} className="rounded-xl border bg-gray-50 p-4 space-y-3">

@@ -77,7 +77,6 @@ const CleanerCabinet = () => {
       <div>
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-yellow-600">Cleaner mobile workspace</p>
         <h1 className="text-4xl font-black text-gray-950">Кабинет клинера</h1>
-        <p className="text-gray-600 mt-2">Мои задачи, чек-лист выполнения и отправка отчета без лишних полей.</p>
       </div>
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
@@ -125,7 +124,7 @@ const CleanerCabinet = () => {
                     <Button onClick={() => submitReport(assignment)}><CheckCircle2 className="h-4 w-4 mr-2" />Отправить отчет</Button>
                   </div>
                 )}
-                {assignment.status === 'completed' && <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-green-800 font-semibold">Отчет отправлен: {assignment.report?.final_notes || 'без комментария'}</div>}
+                {assignment.status === 'completed' && <div className="rounded-xl bg-green-50 border border-green-200 p-4 text-green-800 font-semibold">Отчет отправлен</div>}
               </CardContent>
             </Card>
           );

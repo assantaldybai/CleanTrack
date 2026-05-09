@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { AlertCircle, Building2, Lock, Sparkles, UserCheck, Zap } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { AlertCircle, Building2, Sparkles, UserCheck, Zap } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { roleHome } from '../lib/api';
 
@@ -54,19 +54,13 @@ const Login = () => {
           <h1 className="text-6xl font-black tracking-tight">SKY<span className="text-white">X</span></h1>
           <p className="text-2xl font-black mt-3">SaaS-платформа контроля уборки</p>
           <p className="text-lg text-black/80 mt-4 max-w-xl font-medium">
-            Кабинеты организации, клинингового оператора, клинеров и супер-админа. Beta работает по логину и паролю — без email и телефона.
+            Контроль уборки для организаций, клининга и исполнителей.
           </p>
-          <div className="mt-6 inline-flex rounded-full bg-black px-5 py-2 text-yellow-400 font-bold border-2 border-yellow-300">
-            RLS / tenant isolation включена на backend
-          </div>
         </div>
 
         <Card className="shadow-2xl border-4 border-black bg-white/95 backdrop-blur">
           <CardHeader className="space-y-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-black rounded-t-lg">
-            <CardTitle className="text-2xl font-black text-center">Вход в beta</CardTitle>
-            <CardDescription className="text-center text-black/80 font-medium">
-              Используйте логин и пароль. Аккаунты создаются администраторами.
-            </CardDescription>
+            <CardTitle className="text-2xl font-black text-center">Вход</CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-4 p-6">
@@ -94,11 +88,7 @@ const Login = () => {
             </form>
 
             <div className="pt-4 border-t-2 border-gray-200 space-y-3">
-              <div className="rounded-xl border-2 border-black bg-gray-50 p-3 text-xs text-gray-700 font-semibold flex items-start gap-2">
-                <Lock className="h-4 w-4 text-black mt-0.5" />
-                <span>Супер-админ не публикуется в демо-доступах. Вход только по внутренне выданным учетным данным.</span>
-              </div>
-              <p className="text-sm text-gray-700 text-center font-bold">Демо-доступы рабочих ролей:</p>
+              <p className="text-sm text-gray-700 text-center font-bold">Демо:</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {demos.map((demo) => {
                   const Icon = demo.icon;

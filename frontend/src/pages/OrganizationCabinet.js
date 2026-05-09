@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -71,7 +71,6 @@ const OrganizationCabinet = () => {
       <div>
         <p className="text-sm font-bold uppercase tracking-[0.3em] text-yellow-600">Organization workspace</p>
         <h1 className="text-4xl font-black text-gray-950">Кабинет организации</h1>
-        <p className="text-gray-600 mt-2">Объекты, зоны, чек-листы, назначение клининговым компаниям и KPI качества уборки.</p>
       </div>
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
@@ -131,7 +130,7 @@ const OrganizationCabinet = () => {
       </div>
 
       <Card>
-        <CardHeader><CardTitle>Назначенные задачи</CardTitle><CardDescription>Видны только задачи вашей организации.</CardDescription></CardHeader>
+        <CardHeader><CardTitle>Назначенные задачи</CardTitle></CardHeader>
         <CardContent className="space-y-3">
           {assignments.map((item) => <AssignmentRow key={item.id} item={item} />)}
           {assignments.length === 0 && <p className="text-gray-500">Задач пока нет</p>}
@@ -142,7 +141,7 @@ const OrganizationCabinet = () => {
 };
 
 const Metric = ({ icon: Icon, label, value }) => <Card><CardContent className="p-4"><Icon className="h-5 w-5 text-yellow-600" /><p className="text-sm text-gray-500 mt-2">{label}</p><p className="text-2xl font-black">{value ?? 0}</p></CardContent></Card>;
-const FormCard = ({ title, description, onSubmit, children }) => <Card><CardHeader><CardTitle>{title}</CardTitle><CardDescription>{description}</CardDescription></CardHeader><CardContent><form onSubmit={onSubmit} className="space-y-3">{children}</form></CardContent></Card>;
+const FormCard = ({ title, onSubmit, children }) => <Card><CardHeader><CardTitle>{title}</CardTitle></CardHeader><CardContent><form onSubmit={onSubmit} className="space-y-3">{children}</form></CardContent></Card>;
 const AssignmentRow = ({ item }) => <div className="rounded-xl border bg-gray-50 p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3"><div><div className="font-bold">{item.title}</div><div className="text-sm text-gray-600">{item.building_name} • {item.zone_name} • {item.cleaning_company_name}</div><div className="text-xs text-gray-500">{item.scheduled_date} {item.scheduled_time} • клинер: {item.cleaner_name}</div></div><Badge>{item.status}</Badge></div>;
 
 export default OrganizationCabinet;
