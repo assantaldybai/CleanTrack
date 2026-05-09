@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { initializeMockData, getFromStorage } from '../mockData';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { apiRequest, setToken } from '../lib/api';
 
 const AuthContext = createContext();
 
@@ -16,34 +16,50 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    initializeMockData();
-    
-    // Проверяем сохраненного пользователя
-    const savedUser = localStorage.getItem('skyx_current_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    const restoreSession = async () => {
+      const savedUser = localStorage.getItem('skyx_current_user');
+      const token = localStorage.getItem('skyx_token');
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const freshUser = await apiRequest('/auth/me');
+        setUser(freshUser);
+        localStorage.setItem('skyx_current_user', JSON.stringify(freshUser));
+      } catch (error) {
+        setToken(null);
+        localStorage.removeItem('skyx_current_user');
+        if (savedUser) {
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSession();
   }, []);
 
   const login = async (username, password) => {
-    const users = getFromStorage('skyx_users', []);
-    const foundUser = users.find(u => u.username === username && u.password === password);
-    
-    if (foundUser) {
-      const userWithoutPassword = { ...foundUser };
-      delete userWithoutPassword.password;
-      
-      setUser(userWithoutPassword);
-      localStorage.setItem('skyx_current_user', JSON.stringify(userWithoutPassword));
-      return { success: true };
-    } else {
-      return { success: false, error: 'Неверные данные для входа' };
+    try {
+      const result = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+      setToken(result.token);
+      setUser(result.user);
+      localStorage.setItem('skyx_current_user', JSON.stringify(result.user));
+      return { success: true, user: result.user };
+    } catch (error) {
+      return { success: false, error: error.message || 'Неверные данные для входа' };
     }
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem('skyx_current_user');
   };
 
@@ -52,8 +68,10 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     loading,
-    isAdmin: user?.role === 'admin',
-    isCleaner: user?.role === 'cleaner'
+    isSuperAdmin: user?.role === 'super_admin',
+    isOrganizationAdmin: user?.role === 'organization_admin',
+    isCleaningAdmin: user?.role === 'cleaning_company_admin',
+    isCleaner: user?.role === 'cleaner',
   };
 
   return (

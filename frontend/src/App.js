@@ -3,150 +3,92 @@ import "./App.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { Toaster } from "./components/ui/toaster";
+import { roleHome } from "./lib/api";
 
-// Components
 import Login from "./components/Login";
 import Layout from "./components/Layout";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
+import OrganizationCabinet from "./pages/OrganizationCabinet";
+import CleaningCabinet from "./pages/CleaningCabinet";
+import CleanerCabinet from "./pages/CleanerCabinet";
 
-// Admin pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminBuildings from "./pages/admin/AdminBuildings";
-import AdminZones from "./pages/admin/AdminZones";
-import AdminChecklists from "./pages/admin/AdminChecklists";
-import AdminCleaners from "./pages/admin/AdminCleaners";
-import AdminAssignments from "./pages/admin/AdminAssignments";
-
-// Cleaner pages  
-import CleanerDashboard from "./pages/cleaner/CleanerDashboard";
-import CleanerHistory from "./pages/cleaner/CleanerHistory";
-import TaskExecution from "./pages/cleaner/TaskExecution";
-
-// Protected Route component
-const ProtectedRoute = ({ children, requiredRole }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
-  
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-24 w-24 border-b-4 border-yellow-500"></div>
       </div>
     );
   }
-  
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/cleaner/dashboard'} replace />;
+
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to={roleHome(user.role)} replace />;
   }
-  
+
   return <Layout>{children}</Layout>;
 };
 
 function AppContent() {
   const { user } = useAuth();
-  
+
   return (
     <div className="App">
       <Routes>
-        {/* Public routes */}
-        <Route 
-          path="/login" 
-          element={user ? (
-            <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/cleaner/dashboard'} replace />
-          ) : (
-            <Login />
-          )} 
+        <Route
+          path="/login"
+          element={user ? <Navigate to={roleHome(user.role)} replace /> : <Login />}
         />
-        
-        {/* Admin routes */}
-        <Route 
-          path="/admin/dashboard" 
+
+        <Route
+          path="/super-admin"
           element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminDashboard />
+            <ProtectedRoute allowedRoles={["super_admin"]}>
+              <SuperAdminDashboard />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/buildings" 
+
+        <Route
+          path="/organization"
           element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminBuildings />
+            <ProtectedRoute allowedRoles={["organization_admin"]}>
+              <OrganizationCabinet />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/zones" 
+
+        <Route
+          path="/cleaning"
           element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminZones />
+            <ProtectedRoute allowedRoles={["cleaning_company_admin"]}>
+              <CleaningCabinet />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/checklists" 
+
+        <Route
+          path="/cleaner"
           element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminChecklists />
+            <ProtectedRoute allowedRoles={["cleaner"]}>
+              <CleanerCabinet />
             </ProtectedRoute>
-          } 
+          }
         />
-        <Route 
-          path="/admin/cleaners" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminCleaners />
-            </ProtectedRoute>
-          } 
+
+        <Route path="/admin/dashboard" element={<Navigate to="/organization" replace />} />
+        <Route path="/cleaner/dashboard" element={<Navigate to="/cleaner" replace />} />
+
+        <Route
+          path="/"
+          element={user ? <Navigate to={roleHome(user.role)} replace /> : <Navigate to="/login" replace />}
         />
-        <Route 
-          path="/admin/assignments" 
-          element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminAssignments />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Cleaner routes */}
-        <Route 
-          path="/cleaner/dashboard" 
-          element={
-            <ProtectedRoute requiredRole="cleaner">
-              <CleanerDashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/cleaner/history" 
-          element={
-            <ProtectedRoute requiredRole="cleaner">
-              <CleanerHistory />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/cleaner/task/:taskId" 
-          element={
-            <ProtectedRoute requiredRole="cleaner">
-              <TaskExecution />
-            </ProtectedRoute>
-          } 
-        />
-        
-        {/* Default redirect */}
-        <Route 
-          path="/" 
-          element={
-            user ? (
-              <Navigate to={user.role === 'admin' ? '/admin/dashboard' : '/cleaner/dashboard'} replace />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          } 
-        />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster />
     </div>

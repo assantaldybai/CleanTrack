@@ -1,64 +1,58 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { Button } from './ui/button';
-import { LogOut, Building2, Users, ClipboardList, Calendar } from 'lucide-react';
+import { BarChart3, Building2, LogOut, ShieldCheck, Sparkles, UserCheck } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { roleHome, roleLabel } from '../lib/api';
+
+const menus = {
+  super_admin: [
+    { path: '/super-admin', label: 'SaaS контроль', icon: ShieldCheck },
+  ],
+  organization_admin: [
+    { path: '/organization', label: 'Организация', icon: Building2 },
+  ],
+  cleaning_company_admin: [
+    { path: '/cleaning', label: 'Клининг', icon: Sparkles },
+  ],
+  cleaner: [
+    { path: '/cleaner', label: 'Мои задачи', icon: UserCheck },
+  ],
+};
 
 const Layout = ({ children }) => {
-  const { user, logout, isAdmin, isCleaner } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const menuItems = menus[user?.role] || [];
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const adminMenuItems = [
-    { path: '/admin/dashboard', label: 'Dashboard', icon: Building2 },
-    { path: '/admin/buildings', label: 'Здания', icon: Building2 },
-    { path: '/admin/zones', label: 'Зоны', icon: Building2 },
-    { path: '/admin/checklists', label: 'Чек-листы', icon: ClipboardList },
-    { path: '/admin/cleaners', label: 'Клинеры', icon: Users },
-    { path: '/admin/assignments', label: 'Задания', icon: Calendar },
-  ];
-
-  const cleanerMenuItems = [
-    { path: '/cleaner/dashboard', label: 'Мои задания', icon: ClipboardList },
-    { path: '/cleaner/history', label: 'История', icon: Calendar },
-  ];
-
-  const menuItems = isAdmin ? adminMenuItems : cleanerMenuItems;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-black">
+      <header className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 shadow-lg border-b-4 border-black sticky top-0 z-30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-black">
-                  SKY<span className="text-white">X</span>
-                </h1>
-                <p className="text-xs text-black font-medium">Система управления клинингом</p>
+            <button className="flex items-center text-left" onClick={() => navigate(roleHome(user?.role))}>
+              <div>
+                <h1 className="text-2xl font-black text-black">SKY<span className="text-white">X</span></h1>
+                <p className="text-xs text-black font-bold">Cleaning SaaS Beta</p>
               </div>
-            </div>
-            
+            </button>
+
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-black">
-                <span className="font-medium">{user?.name}</span>
-                <span className="ml-2 px-3 py-1 bg-black text-yellow-400 rounded-full text-xs font-bold">
-                  {isAdmin ? 'АДМИНИСТРАТОР' : 'КЛИНЕР'}
-                </span>
+              <div className="hidden md:block text-sm text-black text-right">
+                <div className="font-black">{user?.name}</div>
+                <div className="text-xs font-bold">{user?.username}</div>
               </div>
-              
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="flex items-center space-x-1 border-2 border-black text-black hover:bg-black hover:text-yellow-400 font-semibold"
-              >
+              <span className="px-3 py-1 bg-black text-yellow-400 rounded-full text-xs font-black border border-yellow-300">
+                {roleLabel(user?.role)}
+              </span>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center space-x-1 border-2 border-black text-black hover:bg-black hover:text-yellow-400 font-bold">
                 <LogOut className="h-4 w-4" />
                 <span>Выйти</span>
               </Button>
@@ -68,35 +62,29 @@ const Layout = ({ children }) => {
       </header>
 
       <div className="flex">
-        {/* Sidebar */}
-        <nav className="w-64 bg-black shadow-xl min-h-screen border-r-4 border-yellow-400">
-          <div className="p-4">
-            <div className="space-y-2">
-              {menuItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
-                
-                return (
-                  <button
-                    key={item.path}
-                    onClick={() => navigate(item.path)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 font-medium ${
-                      isActive 
-                        ? 'bg-yellow-400 text-black shadow-lg transform scale-105' 
-                        : 'text-yellow-400 hover:bg-yellow-400 hover:text-black hover:transform hover:scale-105'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
+        <nav className="w-64 bg-black shadow-xl min-h-[calc(100vh-4rem)] border-r-4 border-yellow-400 hidden lg:block">
+          <div className="p-4 space-y-3">
+            <div className="rounded-xl border border-yellow-400/40 bg-yellow-400/10 p-3 text-yellow-100 text-xs leading-relaxed">
+              <div className="flex items-center gap-2 font-black text-yellow-400 mb-1"><BarChart3 className="h-4 w-4" />RLS active</div>
+              Данные фильтруются backend-политикой по роли и tenant ID.
+            </div>
+            {menuItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname === item.path;
+              return (
+                <button key={item.path} onClick={() => navigate(item.path)} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 font-bold ${isActive ? 'bg-yellow-400 text-black shadow-lg' : 'text-yellow-400 hover:bg-yellow-400 hover:text-black'}`}>
+                  <Icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+            <div className="pt-4 border-t border-yellow-400/30 text-xs text-yellow-100/80">
+              Beta: организации назначают клинингам территории и задачи; клининг распределяет по клинерам; клинер отправляет отчет.
             </div>
           </div>
         </nav>
 
-        {/* Main content */}
-        <main className="flex-1 p-6 bg-gray-50">
+        <main className="flex-1 p-4 md:p-6 bg-gray-50 overflow-x-hidden">
           {children}
         </main>
       </div>
