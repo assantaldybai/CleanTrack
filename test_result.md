@@ -124,6 +124,13 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ EXTERNAL ROUTING FIXED: Targeted retest confirms infrastructure issue resolved. External URL https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ now correctly routes to backend. Tests passed: ✅ GET /api/ returns SKYX API message (not React HTML), ✅ POST /api/auth/login with superadmin/Super2025! returns JWT token, ✅ GET /api/auth/me validates token and returns user data. Combined with previous local testing (19/20 tests, 95% success), backend is fully functional both locally and externally. Frontend can now communicate with backend via REACT_APP_BACKEND_URL."
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented production-grade super-admin backend expansion: SaaS command center endpoint, tenant statuses active/suspended/archived, subscription plans and limits, organization/company status and plan management, company-organization link management, user block/unblock, audit logs for platform operations, tenant health/risk snapshots, startup backfill for status/limits, and account blocking for suspended tenants. Python lint passes. Needs backend retesting."
+      - working: true
+        agent: "testing"
+        comment: "✅ SUPER-ADMIN HARDENING COMPLETE: Comprehensive testing of production-grade super-admin features shows 100% success (10/10 tests passed). Test file: /app/backend_superadmin_test.py. Results: ✅ Superadmin login works, ✅ Command center endpoint returns platform stats (health_score, orgs, companies, users, assignments), organizations matrix with usage/risks, cleaning_companies matrix with usage/risks, recent audit logs, and plan presets (beta/growth/enterprise), ✅ No Mongo _id leaks detected, ✅ Audit log access control works (superadmin can access, org/cleaning/cleaner roles get 403), ✅ Organization status management works (suspend/active/archived), suspended org admin blocked from protected routes (403), restored org admin can access, ✅ Organization plan updates work (subscription_plan and custom limits applied correctly), ✅ Cleaning company status management works (suspend/active), suspended cleaning admin and cleaner blocked (403), restored users can access, ✅ Cleaning company plan updates work (subscription_plan and custom limits applied), ✅ Company-organization links work (update/clear/restore links, validates non-existent org IDs with 400), ✅ User block/unblock works (blocked user cannot login with 401, unblocked user can login, superadmin cannot block self with 400), ✅ Audit log entries created for all operations (organization.status_update, organization.plan_update, cleaning_company.status_update, cleaning_company.plan_update, cleaning_company.organization_links_update, user.status_update), ✅ Regression smoke tests pass (organization list, cleaning company list, assignments list, analytics overview all working). Demo org and company restored to active state after testing."
+
 
 frontend:
   - task: "SKYX beta frontend: role-based cabinets and API integration"
@@ -136,6 +143,10 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
+      - working: "NA"
+        agent: "main"
+        comment: "Reworked super-admin UI into SaaS Command Center: platform health, risk tenants, tenant lifecycle controls, plan/status actions, organization-company linking, user access management, audit feed, and usage/risk cards. JS lint passes. Frontend UI testing still requires explicit user permission."
+
         comment: "Implemented API-based auth context, login page with four demo roles, role routing, shared layout, Super Admin cabinet, Organization cabinet, Cleaning Company cabinet, Cleaner cabinet. Frontend lint passes. Frontend testing requires explicit user permission after backend testing."
       - working: false
         agent: "user"
@@ -144,11 +155,11 @@ frontend:
 metadata:
   created_by: "main_agent"
   version: "0.2-beta"
-  test_sequence: 2
+  test_sequence: 3
   run_ui: false
 test_plan:
   current_focus:
-    - "SKYX beta backend: auth, roles, RLS, tenants, cleaning workflow, reports, analytics"
+    - "Frontend UI testing (requires user permission)"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -159,5 +170,9 @@ agent_communication:
     message: "Follow-up: created missing frontend/.env with REACT_APP_BACKEND_URL using this workspace preview URL from supervisor config, restarted frontend. Please perform targeted backend/external routing retest on https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ and confirm whether ingress routes /api to backend."
   - agent: "testing"
     message: "Backend testing complete. CRITICAL INFRASTRUCTURE ISSUE: External URL https://demobackend.emergentagent.com is not routing to backend - all requests return 'Route not found'. Backend code is fully functional on localhost:8001 with 95% test success rate. All 7 test scenarios passed: auth, RLS isolation, super admin workflows, org admin workflows, cleaning admin workflows, cleaner workflows, and analytics. The external URL routing must be fixed for frontend to communicate with backend. This is NOT a backend code issue but an infrastructure/Kubernetes ingress/nginx routing configuration problem."
+  - agent: "main"
+    message: "Implemented confirmed super-admin hardening. Backend changes: /super-admin/command-center, /super-admin/audit-log, org/company status+plan endpoints, company-organization link endpoint, user status endpoint, tenant blocking enforcement, audit logs, plan/limit backfill. Please test these backend APIs with superadmin credentials and verify suspended tenants/users lose access while superadmin remains operational. Do not run frontend UI tests."
   - agent: "testing"
     message: "✅ EXTERNAL ROUTING RESOLVED: Targeted retest confirms main agent's fix successful. External URL https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ now correctly routes to backend (returns SKYX API message, not React HTML). Auth endpoints working externally (login and token validation tested with superadmin credentials). Backend is fully functional both locally (19/20 tests) and externally. Frontend-backend communication infrastructure is now operational."
+  - agent: "testing"
+    message: "✅ SUPER-ADMIN HARDENING TESTING COMPLETE: All 10 super-admin backend tests passed (100% success rate). Production-grade features fully functional: command center with platform health/stats/matrices/audit/presets, audit log access control (superadmin only), organization status lifecycle (suspend blocks access, active restores, archived sets is_active=false), organization plan updates with custom limits, cleaning company status lifecycle (suspend blocks cleaning admin and cleaner access, active restores), cleaning company plan updates with custom limits, company-organization link management with validation, user block/unblock (blocked cannot login, prevents self-block), audit log entries for all operations, regression smoke tests pass. No Mongo _id leaks. Demo org and company restored to active state. Backend is production-ready for super-admin SaaS operations."

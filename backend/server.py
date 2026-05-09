@@ -36,6 +36,23 @@ ROLES = {
     "cleaner": "Клинер",
 }
 
+TENANT_STATUSES = ["active", "suspended", "archived"]
+DEFAULT_ORG_LIMITS = {
+    "max_buildings": 25,
+    "max_cleaners": 250,
+    "max_monthly_assignments": 5000,
+}
+DEFAULT_COMPANY_LIMITS = {
+    "max_cleaners": 100,
+    "max_monthly_assignments": 3000,
+}
+PLAN_PRESETS = {
+    "beta": {"max_buildings": 10, "max_cleaners": 50, "max_monthly_assignments": 1000},
+    "growth": {"max_buildings": 50, "max_cleaners": 500, "max_monthly_assignments": 15000},
+    "enterprise": {"max_buildings": 500, "max_cleaners": 5000, "max_monthly_assignments": 250000},
+}
+
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -87,7 +104,9 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
     user = await db.users.find_one({"id": user_id, "is_active": True})
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Пользователь не найден")
-    return normalize_doc(user)
+    user = normalize_doc(user)
+    await validate_operational_user(user)
+    return user
 
 
 def require_roles(user: Dict[str, Any], allowed: List[str]) -> None:
@@ -130,6 +149,75 @@ def assert_same_scope(doc: Dict[str, Any], query: Dict[str, Any]) -> None:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="RLS: доступ к чужим данным запрещен")
 
 
+async def audit_log(
+    actor: Optional[Dict[str, Any]],
+    action: str,
+    target_type: str,
+    target_id: Optional[str] = None,
+    before: Optional[Dict[str, Any]] = None,
+    after: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> None:
+    doc = {
+        "id": new_id(),
+        "actor_user_id": actor.get("id") if actor else None,
+        "actor_username": actor.get("username") if actor else "system",
+        "actor_role": actor.get("role") if actor else "system",
+        "action": action,
+        "target_type": target_type,
+        "target_id": target_id,
+        "before": before,
+        "after": after,
+        "metadata": metadata or {},
+        "created_at": now_iso(),
+    }
+    await db.audit_logs.insert_one(doc)
+
+
+def month_prefix() -> str:
+    return datetime.now(timezone.utc).date().isoformat()[:7]
+
+
+def merge_limits(plan: str, custom_limits: Optional[Dict[str, int]], defaults: Dict[str, int]) -> Dict[str, int]:
+    limits = dict(defaults)
+    limits.update(PLAN_PRESETS.get(plan, {}))
+    if custom_limits:
+        limits.update({key: int(value) for key, value in custom_limits.items() if value is not None})
+    return limits
+
+
+async def validate_operational_user(user: Dict[str, Any]) -> None:
+    if user["role"] == "super_admin":
+        return
+    if user.get("organization_id"):
+        org = await find_one_public("organizations", {"id": user["organization_id"]})
+        if not org or org.get("status", "active") != "active" or not org.get("is_active", True):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Организация заблокирована или архивирована")
+    if user.get("cleaning_company_id"):
+        company = await find_one_public("cleaning_companies", {"id": user["cleaning_company_id"]})
+        if not company or company.get("status", "active") != "active" or not company.get("is_active", True):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Клининговая компания заблокирована или архивирована")
+
+
+async def ensure_org_assignment_limit(organization_id: str) -> None:
+    org = await find_one_public("organizations", {"id": organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Организация не найдена")
+    if org.get("status", "active") != "active":
+        raise HTTPException(status_code=403, detail="Организация не активна")
+    limits = org.get("limits", DEFAULT_ORG_LIMITS)
+    max_monthly = limits.get("max_monthly_assignments", DEFAULT_ORG_LIMITS["max_monthly_assignments"])
+    current_month = month_prefix()
+    used = await db.assignments.count_documents({"organization_id": organization_id, "scheduled_date": {"$regex": f"^{current_month}"}})
+    if used >= max_monthly:
+        raise HTTPException(status_code=403, detail="Превышен месячный лимит задач организации")
+
+
+async def ensure_company_operational(company: Dict[str, Any]) -> None:
+    if company.get("status", "active") != "active" or not company.get("is_active", True):
+        raise HTTPException(status_code=403, detail="Клининговая компания не активна")
+
+
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -148,6 +236,8 @@ class OrganizationCreate(BaseModel):
     name: str
     inn: Optional[str] = None
     city: Optional[str] = None
+    subscription_plan: str = "beta"
+    limits: Optional[Dict[str, int]] = None
     notes: Optional[str] = None
 
 
@@ -155,6 +245,8 @@ class CleaningCompanyCreate(BaseModel):
     name: str
     type: str = "company"
     organization_ids: List[str] = Field(default_factory=list)
+    subscription_plan: str = "beta"
+    limits: Optional[Dict[str, int]] = None
     notes: Optional[str] = None
 
 
@@ -216,6 +308,28 @@ class ReportItem(BaseModel):
     comment: Optional[str] = None
 
 
+
+class TenantStatusUpdate(BaseModel):
+    status: str
+    reason: Optional[str] = None
+
+
+class PlanUpdate(BaseModel):
+    subscription_plan: str
+    limits: Optional[Dict[str, int]] = None
+    notes: Optional[str] = None
+
+
+class CompanyOrganizationLinksUpdate(BaseModel):
+    organization_ids: List[str]
+    reason: Optional[str] = None
+
+
+class UserStatusUpdate(BaseModel):
+    is_active: bool
+    reason: Optional[str] = None
+
+
 class ReportCreate(BaseModel):
     completed_items: List[ReportItem]
     final_notes: Optional[str] = None
@@ -234,6 +348,8 @@ async def login(payload: LoginRequest):
     if not user or not pbkdf2_sha256.verify(payload.password, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Неверный логин или пароль")
     user = normalize_doc(user)
+    await validate_operational_user(user)
+    await audit_log(user, "auth.login", "user", user["id"], metadata={"username": user["username"]})
     return {"token": create_token(user), "user": public_user(user)}
 
 
@@ -284,6 +400,7 @@ async def create_user(payload: UserCreate, user: Dict[str, Any] = Depends(get_cu
         "created_at": now_iso(),
     }
     await db.users.insert_one(doc)
+    await audit_log(user, "user.create", "user", doc["id"], after=public_user(doc), metadata={"created_role": payload.role})
     return public_user(doc)
 
 
@@ -308,15 +425,17 @@ async def list_users(role: Optional[str] = None, user: Dict[str, Any] = Depends(
 async def create_organization(payload: OrganizationCreate, user: Dict[str, Any] = Depends(get_current_user)):
     require_roles(user, ["super_admin"])
     doc = payload.model_dump()
-    doc.update({"id": new_id(), "is_active": True, "created_at": now_iso()})
+    doc["limits"] = merge_limits(doc.get("subscription_plan", "beta"), doc.get("limits"), DEFAULT_ORG_LIMITS)
+    doc.update({"id": new_id(), "status": "active", "is_active": True, "created_at": now_iso(), "updated_at": now_iso()})
     await db.organizations.insert_one(doc)
+    await audit_log(user, "organization.create", "organization", doc["id"], after=normalize_doc(dict(doc)))
     return normalize_doc(doc)
 
 
 @api_router.get("/organizations")
 async def list_organizations(user: Dict[str, Any] = Depends(get_current_user)):
     if user["role"] == "super_admin":
-        return await find_many_public("organizations", {"is_active": True})
+        return await find_many_public("organizations", {})
     if user.get("organization_id"):
         org = await find_one_public("organizations", {"id": user["organization_id"], "is_active": True})
         return [org] if org else []
@@ -327,8 +446,10 @@ async def list_organizations(user: Dict[str, Any] = Depends(get_current_user)):
 async def create_cleaning_company(payload: CleaningCompanyCreate, user: Dict[str, Any] = Depends(get_current_user)):
     require_roles(user, ["super_admin"])
     doc = payload.model_dump()
-    doc.update({"id": new_id(), "is_active": True, "created_at": now_iso()})
+    doc["limits"] = merge_limits(doc.get("subscription_plan", "beta"), doc.get("limits"), DEFAULT_COMPANY_LIMITS)
+    doc.update({"id": new_id(), "status": "active", "is_active": True, "created_at": now_iso(), "updated_at": now_iso()})
     await db.cleaning_companies.insert_one(doc)
+    await audit_log(user, "cleaning_company.create", "cleaning_company", doc["id"], after=normalize_doc(dict(doc)))
     return normalize_doc(doc)
 
 
@@ -336,7 +457,7 @@ async def create_cleaning_company(payload: CleaningCompanyCreate, user: Dict[str
 async def list_cleaning_companies(user: Dict[str, Any] = Depends(get_current_user)):
     role = user["role"]
     if role == "super_admin":
-        query = {"is_active": True}
+        query = {}
     elif role == "organization_admin":
         query = {"is_active": True, "organization_ids": user["organization_id"]}
     elif role in ["cleaning_company_admin", "cleaner"]:
@@ -447,6 +568,8 @@ async def create_assignment(payload: AssignmentCreate, user: Dict[str, Any] = De
     company = await find_one_public("cleaning_companies", {"id": payload.cleaning_company_id, "is_active": True})
     if not zone or not checklist or not company:
         raise HTTPException(status_code=404, detail="Зона, чек-лист или клининговая компания не найдены")
+    await ensure_company_operational(company)
+    await ensure_org_assignment_limit(zone["organization_id"])
     assert_same_scope(zone, org_scope(user))
     assert_same_scope(checklist, {"organization_id": zone["organization_id"]})
     if zone["organization_id"] not in company.get("organization_ids", []):
@@ -469,6 +592,7 @@ async def create_assignment(payload: AssignmentCreate, user: Dict[str, Any] = De
         "updated_at": now_iso(),
     })
     await db.assignments.insert_one(doc)
+    await audit_log(user, "assignment.create", "assignment", doc["id"], after=normalize_doc(dict(doc)), metadata={"organization_id": doc["organization_id"], "cleaning_company_id": doc["cleaning_company_id"]})
     return await enrich_assignment(normalize_doc(doc))
 
 
@@ -490,6 +614,7 @@ async def assign_cleaner(assignment_id: str, payload: AssignCleanerRequest, user
     if not cleaner:
         raise HTTPException(status_code=400, detail="Клинер не найден в вашей компании")
     await db.assignments.update_one({"id": assignment_id}, {"$set": {"cleaner_user_id": payload.cleaner_user_id, "status": "assigned", "updated_at": now_iso()}})
+    await audit_log(user, "assignment.assign_cleaner", "assignment", assignment_id, before=assignment, after={"cleaner_user_id": payload.cleaner_user_id, "status": "assigned"})
     updated = await find_one_public("assignments", {"id": assignment_id})
     return await enrich_assignment(updated)
 
@@ -505,6 +630,7 @@ async def update_assignment_status(assignment_id: str, payload: StatusUpdateRequ
     if user["role"] == "cleaner" and payload.status not in ["in_progress"]:
         raise HTTPException(status_code=403, detail="Клинер может только начать задачу, завершение идет через отчет")
     await db.assignments.update_one({"id": assignment_id}, {"$set": {"status": payload.status, "updated_at": now_iso()}})
+    await audit_log(user, "assignment.status_update", "assignment", assignment_id, before={"status": assignment.get("status")}, after={"status": payload.status})
     updated = await find_one_public("assignments", {"id": assignment_id})
     return await enrich_assignment(updated)
 
@@ -522,8 +648,221 @@ async def submit_report(assignment_id: str, payload: ReportCreate, user: Dict[st
         {"id": assignment_id},
         {"$set": {"report": report, "status": "completed", "completed_at": now_iso(), "updated_at": now_iso()}},
     )
+    await audit_log(user, "assignment.report_submit", "assignment", assignment_id, before={"status": assignment.get("status")}, after={"status": "completed", "quality_score": report.get("quality_score")})
     updated = await find_one_public("assignments", {"id": assignment_id})
     return await enrich_assignment(updated)
+
+
+
+async def tenant_usage_snapshot(organization: Dict[str, Any]) -> Dict[str, Any]:
+    org_id = organization["id"]
+    assignments = await find_many_public("assignments", {"organization_id": org_id}, limit=5000)
+    completed = len([item for item in assignments if item.get("status") == "completed"])
+    overdue = len([
+        item for item in assignments
+        if item.get("scheduled_date", datetime.now(timezone.utc).date().isoformat()) < datetime.now(timezone.utc).date().isoformat()
+        and item.get("status") != "completed"
+    ])
+    linked_companies = await find_many_public("cleaning_companies", {"organization_ids": org_id}, limit=500)
+    buildings_count = await db.buildings.count_documents({"organization_id": org_id, "is_active": True})
+    zones_count = await db.zones.count_documents({"organization_id": org_id, "is_active": True})
+    reports = [item.get("report") for item in assignments if item.get("report")]
+    average_quality = round(sum(report.get("quality_score", 0) for report in reports) / len(reports), 2) if reports else 0
+    limits = organization.get("limits", DEFAULT_ORG_LIMITS)
+    usage = {
+        "buildings": buildings_count,
+        "zones": zones_count,
+        "assignments_total": len(assignments),
+        "completed": completed,
+        "overdue": overdue,
+        "linked_companies": len(linked_companies),
+        "average_quality": average_quality,
+        "completion_rate": round((completed / len(assignments)) * 100, 1) if assignments else 0,
+    }
+    risks = []
+    if organization.get("status", "active") != "active":
+        risks.append("tenant_not_active")
+    if overdue > 0:
+        risks.append("overdue_tasks")
+    if average_quality and average_quality < 4:
+        risks.append("low_quality")
+    if limits.get("max_buildings") and buildings_count >= limits.get("max_buildings") * 0.8:
+        risks.append("building_limit_near")
+    if limits.get("max_monthly_assignments") and len(assignments) >= limits.get("max_monthly_assignments") * 0.8:
+        risks.append("assignment_limit_near")
+    return {"organization": organization, "usage": usage, "risks": risks}
+
+
+async def company_usage_snapshot(company: Dict[str, Any]) -> Dict[str, Any]:
+    company_id = company["id"]
+    assignments = await find_many_public("assignments", {"cleaning_company_id": company_id}, limit=5000)
+    cleaners = await find_many_public("users", {"cleaning_company_id": company_id, "role": "cleaner"}, limit=1000)
+    completed = len([item for item in assignments if item.get("status") == "completed"])
+    reports = [item.get("report") for item in assignments if item.get("report")]
+    average_quality = round(sum(report.get("quality_score", 0) for report in reports) / len(reports), 2) if reports else 0
+    risks = []
+    if company.get("status", "active") != "active":
+        risks.append("company_not_active")
+    if average_quality and average_quality < 4:
+        risks.append("low_quality")
+    if len([item for item in assignments if item.get("status") in ["pending", "assigned"]]) > max(5, len(cleaners) * 3):
+        risks.append("assignment_backlog")
+    return {
+        "company": company,
+        "usage": {
+            "cleaners": len(cleaners),
+            "assignments_total": len(assignments),
+            "completed": completed,
+            "completion_rate": round((completed / len(assignments)) * 100, 1) if assignments else 0,
+            "average_quality": average_quality,
+            "linked_organizations": len(company.get("organization_ids", [])),
+        },
+        "risks": risks,
+    }
+
+
+@api_router.get("/super-admin/command-center")
+async def super_admin_command_center(user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    organizations = await find_many_public("organizations", {}, limit=5000)
+    companies = await find_many_public("cleaning_companies", {}, limit=5000)
+    users = await find_many_public("users", {}, limit=10000)
+    assignments = await find_many_public("assignments", {}, limit=10000)
+    reports = [item.get("report") for item in assignments if item.get("report")]
+    today = datetime.now(timezone.utc).date().isoformat()
+    overdue = len([item for item in assignments if item.get("scheduled_date", today) < today and item.get("status") != "completed"])
+    completed = len([item for item in assignments if item.get("status") == "completed"])
+    org_matrix = [await tenant_usage_snapshot(item) for item in organizations]
+    company_matrix = [await company_usage_snapshot(item) for item in companies]
+    recent_audit = await find_many_public("audit_logs", {}, limit=30)
+    risk_count = len([item for item in org_matrix + company_matrix if item.get("risks")])
+    health_score = max(0, 100 - (overdue * 3) - (risk_count * 8))
+    return {
+        "platform": {
+            "health_score": health_score,
+            "organizations_total": len(organizations),
+            "organizations_active": len([item for item in organizations if item.get("status", "active") == "active"]),
+            "organizations_suspended": len([item for item in organizations if item.get("status") == "suspended"]),
+            "cleaning_companies_total": len(companies),
+            "companies_active": len([item for item in companies if item.get("status", "active") == "active"]),
+            "users_total": len(users),
+            "active_users": len([item for item in users if item.get("is_active", True)]),
+            "assignments_total": len(assignments),
+            "completed": completed,
+            "overdue": overdue,
+            "completion_rate": round((completed / len(assignments)) * 100, 1) if assignments else 0,
+            "average_quality": round(sum(report.get("quality_score", 0) for report in reports) / len(reports), 2) if reports else 0,
+            "risk_tenants": risk_count,
+        },
+        "organizations": org_matrix,
+        "cleaning_companies": company_matrix,
+        "recent_audit": recent_audit,
+        "plan_presets": PLAN_PRESETS,
+    }
+
+
+@api_router.get("/super-admin/audit-log")
+async def list_audit_logs(user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    return await find_many_public("audit_logs", {}, limit=200)
+
+
+@api_router.patch("/super-admin/organizations/{organization_id}/status")
+async def update_organization_status(organization_id: str, payload: TenantStatusUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    if payload.status not in TENANT_STATUSES:
+        raise HTTPException(status_code=400, detail="Недопустимый статус tenant-а")
+    org = await find_one_public("organizations", {"id": organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Организация не найдена")
+    patch = {"status": payload.status, "is_active": payload.status != "archived", "updated_at": now_iso()}
+    await db.organizations.update_one({"id": organization_id}, {"$set": patch})
+    updated = await find_one_public("organizations", {"id": organization_id})
+    await audit_log(user, "organization.status_update", "organization", organization_id, before=org, after=updated, metadata={"reason": payload.reason})
+    return updated
+
+
+@api_router.patch("/super-admin/organizations/{organization_id}/plan")
+async def update_organization_plan(organization_id: str, payload: PlanUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    org = await find_one_public("organizations", {"id": organization_id})
+    if not org:
+        raise HTTPException(status_code=404, detail="Организация не найдена")
+    patch = {
+        "subscription_plan": payload.subscription_plan,
+        "limits": merge_limits(payload.subscription_plan, payload.limits, DEFAULT_ORG_LIMITS),
+        "updated_at": now_iso(),
+    }
+    if payload.notes:
+        patch["notes"] = payload.notes
+    await db.organizations.update_one({"id": organization_id}, {"$set": patch})
+    updated = await find_one_public("organizations", {"id": organization_id})
+    await audit_log(user, "organization.plan_update", "organization", organization_id, before=org, after=updated)
+    return updated
+
+
+@api_router.patch("/super-admin/cleaning-companies/{company_id}/status")
+async def update_cleaning_company_status(company_id: str, payload: TenantStatusUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    if payload.status not in TENANT_STATUSES:
+        raise HTTPException(status_code=400, detail="Недопустимый статус tenant-а")
+    company = await find_one_public("cleaning_companies", {"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Клининговая компания не найдена")
+    patch = {"status": payload.status, "is_active": payload.status != "archived", "updated_at": now_iso()}
+    await db.cleaning_companies.update_one({"id": company_id}, {"$set": patch})
+    updated = await find_one_public("cleaning_companies", {"id": company_id})
+    await audit_log(user, "cleaning_company.status_update", "cleaning_company", company_id, before=company, after=updated, metadata={"reason": payload.reason})
+    return updated
+
+
+@api_router.patch("/super-admin/cleaning-companies/{company_id}/plan")
+async def update_cleaning_company_plan(company_id: str, payload: PlanUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    company = await find_one_public("cleaning_companies", {"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Клининговая компания не найдена")
+    patch = {
+        "subscription_plan": payload.subscription_plan,
+        "limits": merge_limits(payload.subscription_plan, payload.limits, DEFAULT_COMPANY_LIMITS),
+        "updated_at": now_iso(),
+    }
+    if payload.notes:
+        patch["notes"] = payload.notes
+    await db.cleaning_companies.update_one({"id": company_id}, {"$set": patch})
+    updated = await find_one_public("cleaning_companies", {"id": company_id})
+    await audit_log(user, "cleaning_company.plan_update", "cleaning_company", company_id, before=company, after=updated)
+    return updated
+
+
+@api_router.patch("/super-admin/cleaning-companies/{company_id}/organizations")
+async def update_company_organization_links(company_id: str, payload: CompanyOrganizationLinksUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    company = await find_one_public("cleaning_companies", {"id": company_id})
+    if not company:
+        raise HTTPException(status_code=404, detail="Клининговая компания не найдена")
+    if payload.organization_ids:
+        found = await find_many_public("organizations", {"id": {"$in": payload.organization_ids}}, limit=1000)
+        if len(found) != len(set(payload.organization_ids)):
+            raise HTTPException(status_code=400, detail="Одна или несколько организаций не найдены")
+    await db.cleaning_companies.update_one({"id": company_id}, {"$set": {"organization_ids": payload.organization_ids, "updated_at": now_iso()}})
+    updated = await find_one_public("cleaning_companies", {"id": company_id})
+    await audit_log(user, "cleaning_company.organization_links_update", "cleaning_company", company_id, before=company, after=updated, metadata={"reason": payload.reason})
+    return updated
+
+
+@api_router.patch("/super-admin/users/{user_id}/status")
+async def update_user_status(user_id: str, payload: UserStatusUpdate, user: Dict[str, Any] = Depends(get_current_user)):
+    require_roles(user, ["super_admin"])
+    target = await find_one_public("users", {"id": user_id})
+    if not target:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+    if target.get("role") == "super_admin" and target.get("id") == user.get("id") and not payload.is_active:
+        raise HTTPException(status_code=400, detail="Нельзя заблокировать текущего супер-админа")
+    await db.users.update_one({"id": user_id}, {"$set": {"is_active": payload.is_active, "updated_at": now_iso()}})
+    updated = await find_one_public("users", {"id": user_id})
+    await audit_log(user, "user.status_update", "user", user_id, before=target, after=public_user(updated), metadata={"reason": payload.reason})
+    return public_user(updated)
 
 
 @api_router.get("/analytics/overview")
@@ -572,6 +911,18 @@ async def seed_demo_data() -> None:
     await db.zones.create_index("id", unique=True)
     await db.checklists.create_index("id", unique=True)
     await db.assignments.create_index("id", unique=True)
+    await db.audit_logs.create_index("id", unique=True)
+    await db.audit_logs.create_index("created_at")
+
+    await db.organizations.update_many(
+        {"status": {"$exists": False}},
+        {"$set": {"status": "active", "subscription_plan": "beta", "limits": merge_limits("beta", None, DEFAULT_ORG_LIMITS), "updated_at": now_iso()}},
+    )
+    await db.cleaning_companies.update_many(
+        {"status": {"$exists": False}},
+        {"$set": {"status": "active", "subscription_plan": "beta", "limits": merge_limits("beta", None, DEFAULT_COMPANY_LIMITS), "updated_at": now_iso()}},
+    )
+    await db.users.update_many({"is_active": {"$exists": False}}, {"$set": {"is_active": True}})
 
     if not await db.users.find_one({"username": "superadmin"}):
         org_id = new_id()
@@ -587,6 +938,9 @@ async def seed_demo_data() -> None:
             "inn": "0000000000",
             "city": "Москва",
             "notes": "Демо-организация для beta",
+            "status": "active",
+            "subscription_plan": "enterprise",
+            "limits": merge_limits("enterprise", None, DEFAULT_ORG_LIMITS),
             "is_active": True,
             "created_at": now_iso(),
         })
@@ -596,6 +950,9 @@ async def seed_demo_data() -> None:
             "type": "company",
             "organization_ids": [org_id],
             "notes": "Демо-клининг, привязан к Газпром демо",
+            "status": "active",
+            "subscription_plan": "growth",
+            "limits": merge_limits("growth", None, DEFAULT_COMPANY_LIMITS),
             "is_active": True,
             "created_at": now_iso(),
         })
