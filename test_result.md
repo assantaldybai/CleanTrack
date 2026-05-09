@@ -106,7 +106,7 @@ user_problem_statement: "Beta SaaS-платформа SKYX для контрол
 backend:
   - task: "SKYX beta backend: auth, roles, RLS, tenants, cleaning workflow, reports, analytics"
     implemented: true
-    working: false
+    working: true
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
@@ -118,6 +118,13 @@ backend:
       - working: false
         agent: "testing"
         comment: "CRITICAL ISSUE: Backend APIs work perfectly on localhost:8001 (19/20 tests passed, 95% success rate) but external URL https://demobackend.emergentagent.com is completely non-functional - returns 'Route not found' for all endpoints. This is an infrastructure/routing issue preventing frontend-backend communication. All backend functionality verified: ✅ Auth login for all 4 roles, ✅ /api/auth/me with tokens, ✅ RLS isolation (org admin sees only org data, cleaning admin sees only company tasks, cleaner sees only own tasks), ✅ Super admin creates org/company/accounts without email/phone, ✅ Org admin creates building/zone/checklist/assignment, ✅ Cleaning admin creates cleaner and assigns task, ✅ Cleaner starts task and submits report (status becomes completed), ✅ Analytics returns correct KPIs for all roles. Minor: Unauthorized access returns 403 instead of 401 (acceptable). Test file: /app/backend_test.py"
+      - working: "NA"
+        agent: "main"
+        comment: "Follow-up after testing: troubleshoot found testing agent used generic demobackend URL and frontend/.env was missing. Created /app/frontend/.env with REACT_APP_BACKEND_URL set to this workspace preview URL from supervisor config and restarted frontend. Backend code unchanged; requesting targeted retest of external /api routing on the correct workspace URL."
+      - working: true
+        agent: "testing"
+        comment: "✅ EXTERNAL ROUTING FIXED: Targeted retest confirms infrastructure issue resolved. External URL https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ now correctly routes to backend. Tests passed: ✅ GET /api/ returns SKYX API message (not React HTML), ✅ POST /api/auth/login with superadmin/Super2025! returns JWT token, ✅ GET /api/auth/me validates token and returns user data. Combined with previous local testing (19/20 tests, 95% success), backend is fully functional both locally and externally. Frontend can now communicate with backend via REACT_APP_BACKEND_URL."
+
 frontend:
   - task: "SKYX beta frontend: role-based cabinets and API integration"
     implemented: true
@@ -144,5 +151,9 @@ test_plan:
 agent_communication:
   - agent: "main"
     message: "Backend ready for testing. Use /app/memory/test_credentials.md demo accounts. Test login for all roles, RLS isolation (org admin only org data, cleaning admin only company tasks, cleaner only own tasks), organization creates building/zone/checklist/assignment, cleaning admin creates cleaner and assigns task, cleaner starts task/submits report, analytics updates. Do not perform frontend UI tests yet."
+  - agent: "main"
+    message: "Follow-up: created missing frontend/.env with REACT_APP_BACKEND_URL using this workspace preview URL from supervisor config, restarted frontend. Please perform targeted backend/external routing retest on https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ and confirm whether ingress routes /api to backend."
   - agent: "testing"
     message: "Backend testing complete. CRITICAL INFRASTRUCTURE ISSUE: External URL https://demobackend.emergentagent.com is not routing to backend - all requests return 'Route not found'. Backend code is fully functional on localhost:8001 with 95% test success rate. All 7 test scenarios passed: auth, RLS isolation, super admin workflows, org admin workflows, cleaning admin workflows, cleaner workflows, and analytics. The external URL routing must be fixed for frontend to communicate with backend. This is NOT a backend code issue but an infrastructure/Kubernetes ingress/nginx routing configuration problem."
+  - agent: "testing"
+    message: "✅ EXTERNAL ROUTING RESOLVED: Targeted retest confirms main agent's fix successful. External URL https://5926fd46-0a17-4214-8e22-ef7c38b78339.preview.emergentagent.com/api/ now correctly routes to backend (returns SKYX API message, not React HTML). Auth endpoints working externally (login and token validation tested with superadmin credentials). Backend is fully functional both locally (19/20 tests) and externally. Frontend-backend communication infrastructure is now operational."
