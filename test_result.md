@@ -143,6 +143,14 @@ frontend:
     status_history:
       - working: "NA"
         agent: "main"
+      - working: false
+        agent: "user"
+        comment: "Security feedback: super-admin credentials must not be exposed as a demo access button on the public login screen. Demo access for lower roles is acceptable, but exposing super-admin contradicts SaaS security requirements."
+      - working: "NA"
+        agent: "main"
+        comment: "Security fix applied: removed super-admin from public demo access buttons on Login UI, changed placeholder so it no longer suggests superadmin, added notice that super-admin access is only via internally issued credentials. Demo buttons remain only for organization, cleaning company and cleaner roles. JS lint passes."
+
+
       - working: "NA"
         agent: "main"
         comment: "Reworked super-admin UI into SaaS Command Center: platform health, risk tenants, tenant lifecycle controls, plan/status actions, organization-company linking, user access management, audit feed, and usage/risk cards. JS lint passes. Frontend UI testing still requires explicit user permission."

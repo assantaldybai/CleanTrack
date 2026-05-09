@@ -5,12 +5,11 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { AlertCircle, Building2, ShieldCheck, Sparkles, UserCheck, Zap } from 'lucide-react';
+import { AlertCircle, Building2, Lock, Sparkles, UserCheck, Zap } from 'lucide-react';
 import { Alert, AlertDescription } from './ui/alert';
 import { roleHome } from '../lib/api';
 
 const demos = [
-  { label: 'СУПЕР-АДМИН', username: 'superadmin', password: 'Super2025!', icon: ShieldCheck },
   { label: 'ОРГАНИЗАЦИЯ', username: 'org_gazprom', password: 'Org2025!', icon: Building2 },
   { label: 'КЛИНИНГ', username: 'cleaning_admin', password: 'Clean2025!', icon: Sparkles },
   { label: 'КЛИНЕР', username: 'cleaner_maria', password: 'Cleaner2025!', icon: UserCheck },
@@ -81,7 +80,7 @@ const Login = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="username" className="text-black font-semibold">Логин</Label>
-                <Input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="h-12 border-2 border-gray-300 focus:border-yellow-400 font-medium" placeholder="Например: superadmin" />
+                <Input id="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required className="h-12 border-2 border-gray-300 focus:border-yellow-400 font-medium" placeholder="Введите выданный логин" />
               </div>
 
               <div className="space-y-2">
@@ -94,9 +93,13 @@ const Login = () => {
               </Button>
             </form>
 
-            <div className="pt-4 border-t-2 border-gray-200">
-              <p className="text-sm text-gray-700 text-center mb-3 font-bold">Демо-доступ:</p>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="pt-4 border-t-2 border-gray-200 space-y-3">
+              <div className="rounded-xl border-2 border-black bg-gray-50 p-3 text-xs text-gray-700 font-semibold flex items-start gap-2">
+                <Lock className="h-4 w-4 text-black mt-0.5" />
+                <span>Супер-админ не публикуется в демо-доступах. Вход только по внутренне выданным учетным данным.</span>
+              </div>
+              <p className="text-sm text-gray-700 text-center font-bold">Демо-доступы рабочих ролей:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {demos.map((demo) => {
                   const Icon = demo.icon;
                   return (
