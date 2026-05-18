@@ -560,6 +560,56 @@ async def enrich_assignment(assignment: Dict[str, Any]) -> Dict[str, Any]:
     return enriched
 
 
+def enrich_assignment_with_maps(
+    assignment: Dict[str, Any],
+    zones: Dict[str, Dict[str, Any]],
+    buildings: Dict[str, Dict[str, Any]],
+    checklists: Dict[str, Dict[str, Any]],
+    companies: Dict[str, Dict[str, Any]],
+    cleaners: Dict[str, Dict[str, Any]],
+    organizations: Dict[str, Dict[str, Any]],
+) -> Dict[str, Any]:
+    enriched = dict(assignment)
+    zone = zones.get(assignment.get("zone_id"))
+    building = buildings.get(zone.get("building_id")) if zone else None
+    checklist = checklists.get(assignment.get("checklist_id"))
+    company = companies.get(assignment.get("cleaning_company_id"))
+    cleaner = cleaners.get(assignment.get("cleaner_user_id")) if assignment.get("cleaner_user_id") else None
+    organization = organizations.get(assignment.get("organization_id"))
+    enriched.update({
+        "zone_name": zone.get("name") if zone else "Зона удалена",
+        "zone_type": zone.get("type") if zone else None,
+        "building_name": building.get("name") if building else "Объект удален",
+        "checklist_name": checklist.get("name") if checklist else "Чек-лист удален",
+        "checklist_items": checklist.get("items", []) if checklist else [],
+        "cleaning_company_name": company.get("name") if company else "Клининг удален",
+        "cleaner_name": cleaner.get("name") if cleaner else "Не назначен",
+        "organization_name": organization.get("name") if organization else "Организация удалена",
+    })
+    return enriched
+
+
+async def lookup_by_ids(collection: str, ids: List[Optional[str]]) -> Dict[str, Dict[str, Any]]:
+    clean_ids = list({item for item in ids if item})
+    if not clean_ids:
+        return {}
+    docs = await find_many_public(collection, {"id": {"$in": clean_ids}}, limit=max(len(clean_ids), 1))
+    return {doc["id"]: doc for doc in docs}
+
+
+async def enrich_assignments_bulk(assignments: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    if not assignments:
+        return []
+    zones = await lookup_by_ids("zones", [item.get("zone_id") for item in assignments])
+    buildings = await lookup_by_ids("buildings", [zone.get("building_id") for zone in zones.values()])
+    checklists = await lookup_by_ids("checklists", [item.get("checklist_id") for item in assignments])
+    companies = await lookup_by_ids("cleaning_companies", [item.get("cleaning_company_id") for item in assignments])
+    cleaners = await lookup_by_ids("users", [item.get("cleaner_user_id") for item in assignments])
+    organizations = await lookup_by_ids("organizations", [item.get("organization_id") for item in assignments])
+    return [enrich_assignment_with_maps(item, zones, buildings, checklists, companies, cleaners, organizations) for item in assignments]
+
+
+
 @api_router.post("/assignments")
 async def create_assignment(payload: AssignmentCreate, user: Dict[str, Any] = Depends(get_current_user)):
     require_roles(user, ["super_admin", "organization_admin"])
@@ -600,7 +650,7 @@ async def create_assignment(payload: AssignmentCreate, user: Dict[str, Any] = De
 async def list_assignments(user: Dict[str, Any] = Depends(get_current_user)):
     query = assignment_scope(user)
     docs = await find_many_public("assignments", query)
-    return [await enrich_assignment(doc) for doc in docs]
+    return await enrich_assignments_bulk(docs)
 
 
 @api_router.patch("/assignments/{assignment_id}/assign-cleaner")
@@ -654,18 +704,19 @@ async def submit_report(assignment_id: str, payload: ReportCreate, user: Dict[st
 
 
 
-async def tenant_usage_snapshot(organization: Dict[str, Any]) -> Dict[str, Any]:
-    org_id = organization["id"]
-    assignments = await find_many_public("assignments", {"organization_id": org_id}, limit=5000)
+def build_tenant_usage_snapshot(
+    organization: Dict[str, Any],
+    assignments: List[Dict[str, Any]],
+    linked_company_count: int,
+    buildings_count: int,
+    zones_count: int,
+    today: str,
+) -> Dict[str, Any]:
     completed = len([item for item in assignments if item.get("status") == "completed"])
     overdue = len([
         item for item in assignments
-        if item.get("scheduled_date", datetime.now(timezone.utc).date().isoformat()) < datetime.now(timezone.utc).date().isoformat()
-        and item.get("status") != "completed"
+        if item.get("scheduled_date", today) < today and item.get("status") != "completed"
     ])
-    linked_companies = await find_many_public("cleaning_companies", {"organization_ids": org_id}, limit=500)
-    buildings_count = await db.buildings.count_documents({"organization_id": org_id, "is_active": True})
-    zones_count = await db.zones.count_documents({"organization_id": org_id, "is_active": True})
     reports = [item.get("report") for item in assignments if item.get("report")]
     average_quality = round(sum(report.get("quality_score", 0) for report in reports) / len(reports), 2) if reports else 0
     limits = organization.get("limits", DEFAULT_ORG_LIMITS)
@@ -675,7 +726,7 @@ async def tenant_usage_snapshot(organization: Dict[str, Any]) -> Dict[str, Any]:
         "assignments_total": len(assignments),
         "completed": completed,
         "overdue": overdue,
-        "linked_companies": len(linked_companies),
+        "linked_companies": linked_company_count,
         "average_quality": average_quality,
         "completion_rate": round((completed / len(assignments)) * 100, 1) if assignments else 0,
     }
@@ -693,10 +744,7 @@ async def tenant_usage_snapshot(organization: Dict[str, Any]) -> Dict[str, Any]:
     return {"organization": organization, "usage": usage, "risks": risks}
 
 
-async def company_usage_snapshot(company: Dict[str, Any]) -> Dict[str, Any]:
-    company_id = company["id"]
-    assignments = await find_many_public("assignments", {"cleaning_company_id": company_id}, limit=5000)
-    cleaners = await find_many_public("users", {"cleaning_company_id": company_id, "role": "cleaner"}, limit=1000)
+def build_company_usage_snapshot(company: Dict[str, Any], assignments: List[Dict[str, Any]], cleaners: List[Dict[str, Any]]) -> Dict[str, Any]:
     completed = len([item for item in assignments if item.get("status") == "completed"])
     reports = [item.get("report") for item in assignments if item.get("report")]
     average_quality = round(sum(report.get("quality_score", 0) for report in reports) / len(reports), 2) if reports else 0
@@ -728,13 +776,62 @@ async def super_admin_command_center(user: Dict[str, Any] = Depends(get_current_
     companies = await find_many_public("cleaning_companies", {}, limit=5000)
     users = await find_many_public("users", {}, limit=10000)
     assignments = await find_many_public("assignments", {}, limit=10000)
-    reports = [item.get("report") for item in assignments if item.get("report")]
+    buildings = await find_many_public("buildings", {"is_active": True}, limit=10000)
+    zones = await find_many_public("zones", {"is_active": True}, limit=10000)
+    recent_audit = await find_many_public("audit_logs", {}, limit=30)
+
     today = datetime.now(timezone.utc).date().isoformat()
+    reports = [item.get("report") for item in assignments if item.get("report")]
     overdue = len([item for item in assignments if item.get("scheduled_date", today) < today and item.get("status") != "completed"])
     completed = len([item for item in assignments if item.get("status") == "completed"])
-    org_matrix = [await tenant_usage_snapshot(item) for item in organizations]
-    company_matrix = [await company_usage_snapshot(item) for item in companies]
-    recent_audit = await find_many_public("audit_logs", {}, limit=30)
+
+    assignments_by_org: Dict[str, List[Dict[str, Any]]] = {}
+    assignments_by_company: Dict[str, List[Dict[str, Any]]] = {}
+    for assignment in assignments:
+        if assignment.get("organization_id"):
+            assignments_by_org.setdefault(assignment["organization_id"], []).append(assignment)
+        if assignment.get("cleaning_company_id"):
+            assignments_by_company.setdefault(assignment["cleaning_company_id"], []).append(assignment)
+
+    buildings_by_org: Dict[str, int] = {}
+    for building in buildings:
+        if building.get("organization_id"):
+            buildings_by_org[building["organization_id"]] = buildings_by_org.get(building["organization_id"], 0) + 1
+
+    zones_by_org: Dict[str, int] = {}
+    for zone in zones:
+        if zone.get("organization_id"):
+            zones_by_org[zone["organization_id"]] = zones_by_org.get(zone["organization_id"], 0) + 1
+
+    linked_companies_by_org: Dict[str, int] = {}
+    for company in companies:
+        for organization_id in company.get("organization_ids", []):
+            linked_companies_by_org[organization_id] = linked_companies_by_org.get(organization_id, 0) + 1
+
+    cleaners_by_company: Dict[str, List[Dict[str, Any]]] = {}
+    for item in users:
+        if item.get("role") == "cleaner" and item.get("cleaning_company_id"):
+            cleaners_by_company.setdefault(item["cleaning_company_id"], []).append(item)
+
+    org_matrix = [
+        build_tenant_usage_snapshot(
+            item,
+            assignments_by_org.get(item["id"], []),
+            linked_companies_by_org.get(item["id"], 0),
+            buildings_by_org.get(item["id"], 0),
+            zones_by_org.get(item["id"], 0),
+            today,
+        )
+        for item in organizations
+    ]
+    company_matrix = [
+        build_company_usage_snapshot(
+            item,
+            assignments_by_company.get(item["id"], []),
+            cleaners_by_company.get(item["id"], []),
+        )
+        for item in companies
+    ]
     risk_count = len([item for item in org_matrix + company_matrix if item.get("risks")])
     health_score = max(0, 100 - (overdue * 3) - (risk_count * 8))
     return {

@@ -106,11 +106,11 @@ user_problem_statement: "Beta SaaS-платформа SKYX для контрол
 backend:
   - task: "SKYX beta backend: auth, roles, RLS, tenants, cleaning workflow, reports, analytics"
     implemented: true
-    working: true
+    working: "NA"
     file: "/app/backend/server.py"
     stuck_count: 0
     priority: "high"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
       - working: "NA"
         agent: "main"
@@ -130,6 +130,10 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ SUPER-ADMIN HARDENING COMPLETE: Comprehensive testing of production-grade super-admin features shows 100% success (10/10 tests passed). Test file: /app/backend_superadmin_test.py. Results: ✅ Superadmin login works, ✅ Command center endpoint returns platform stats (health_score, orgs, companies, users, assignments), organizations matrix with usage/risks, cleaning_companies matrix with usage/risks, recent audit logs, and plan presets (beta/growth/enterprise), ✅ No Mongo _id leaks detected, ✅ Audit log access control works (superadmin can access, org/cleaning/cleaner roles get 403), ✅ Organization status management works (suspend/active/archived), suspended org admin blocked from protected routes (403), restored org admin can access, ✅ Organization plan updates work (subscription_plan and custom limits applied correctly), ✅ Cleaning company status management works (suspend/active), suspended cleaning admin and cleaner blocked (403), restored users can access, ✅ Cleaning company plan updates work (subscription_plan and custom limits applied), ✅ Company-organization links work (update/clear/restore links, validates non-existent org IDs with 400), ✅ User block/unblock works (blocked user cannot login with 401, unblocked user can login, superadmin cannot block self with 400), ✅ Audit log entries created for all operations (organization.status_update, organization.plan_update, cleaning_company.status_update, cleaning_company.plan_update, cleaning_company.organization_links_update, user.status_update), ✅ Regression smoke tests pass (organization list, cleaning company list, assignments list, analytics overview all working). Demo org and company restored to active state after testing."
+      - working: "NA"
+        agent: "main"
+        comment: "Deployment health check found blocker: N+1 Mongo queries in /api/assignments and /api/super-admin/command-center. Implemented bulk enrichment for assignments using lookup maps and rewrote command center usage/risk matrices to batch-fetch organizations, companies, users, assignments, buildings, zones and aggregate in memory. Removed per-assignment/per-tenant query loops. Python lint passes; backend needs regression and deployment readiness retest."
+
 
 
 frontend:
@@ -185,7 +189,7 @@ metadata:
   run_ui: true
 test_plan:
   current_focus:
-    - "Full frontend UI testing for TOC/ЦКП control-first redesign approved by user"
+    - "Backend deployment blocker fix: N+1 query optimization regression"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
@@ -214,4 +218,8 @@ agent_communication:
     message: "User approved full UI testing after TOC/ЦКП control-first redesign. Test all roles again, focusing that each dashboard starts with control/constraint/next-action panels before setup/CRUD: super-admin primary constraint + attention/risky tenants before setup; organization overdue/today/quality and main constraint before setup; cleaning unassigned/overdue/today dispatch before cleaner creation; cleaner 'Что делать сейчас' before task list. Also ensure previous security requirements remain: no super-admin demo button, role redirects work."
 
   - agent: "testing"
+
+  - agent: "main"
+    message: "Deployment blocker fix implemented. Please backend-test optimized /api/assignments and /api/super-admin/command-center for correctness, no Mongo _id leaks, preserved RLS, preserved super-admin matrices and analytics. Focus regression on all roles assignments lists and command center. Do not run frontend UI tests."
+
     message: "✅ TOC/ЦКП CONTROL-FIRST REDESIGN TESTING COMPLETE - ALL TESTS PASSED: Comprehensive browser automation testing completed for all 4 roles after control-first redesign. CRITICAL BUG FOUND AND FIXED: CleaningCabinet.js had component structure error (ControlTile defined between return and function closing) causing 'Cannot access ControlTile before initialization' runtime error and red screen crash. Fixed by moving ControlTile outside main component. Test results: (1) Login page: ✅ 3 demo buttons only (ОРГАНИЗАЦИЯ, КЛИНИНГ, КЛИНЕР), NO super-admin button/placeholder. (2) Super-admin: ✅ Control-first layout verified - 'Главное ограничение' (y=346) appears BEFORE 'Настройка' divider (y=475), 'Требует внимания' card visible, all platform metrics visible (Health, Orgs, Companies, Users, Tasks, Risks), setup forms visible after divider, management sections visible. (3) Organization: ✅ Control-first layout verified - 'Главное ограничение' (y=332) appears BEFORE 'Настройка' divider (y=524), 'Отклонения' card visible with all 3 tiles (Просрочено, Сегодня, Качество), setup forms visible after divider. (4) Cleaning: ✅ Control-first layout verified AFTER FIX - 'Главное ограничение' (y=340) appears BEFORE 'Настройка' divider (y=920), 'Диспетчеризация' card visible with all 3 tiles (Без клинера, Просрочено, Сегодня), tasks section visible, setup forms visible after divider. (5) Cleaner: ✅ 'Что делать сейчас' card visible with mini stats (Просрочено, Сегодня) before task list, task cards/controls visible. (6) Security: ✅ Role-based access control working - cleaner redirected from /super-admin to /cleaner, org admin redirected from /super-admin to /organization. (7) Console: ✅ No critical errors detected. All user requirements met. Frontend is production-ready with TOC/ЦКП control-first design."
