@@ -173,15 +173,6 @@ const SuperAdminDashboard = () => {
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-bold text-black">{message}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
-        <Metric label="Health score" value={platform.health_score ?? 0} icon={Activity} tone="black" hint="по рискам и просрочкам" />
-        <Metric label="Организаций" value={platform.organizations_total} icon={Building2} hint={`${platform.organizations_suspended || 0} suspended`} />
-        <Metric label="Клинингов" value={platform.cleaning_companies_total} icon={Sparkles} hint={`${platform.companies_active || 0} active`} />
-        <Metric label="Пользователей" value={platform.users_total} icon={Users} hint={`${platform.active_users || 0} active`} />
-        <Metric label="Задач" value={platform.assignments_total} icon={ShieldCheck} hint={`${platform.completion_rate || 0}% done`} />
-        <Metric label="Рисков" value={platform.risk_tenants} icon={AlertTriangle} tone="black" hint={`${platform.overdue || 0} overdue`} />
-      </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="border-2 border-black bg-black text-white xl:col-span-1">
           <CardHeader>
@@ -281,6 +272,15 @@ const SuperAdminDashboard = () => {
             </form>
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
+        <Metric label="Health score" value={platform.health_score ?? 0} icon={Activity} tone="black" hint="по рискам и просрочкам" />
+        <Metric label="Организаций" value={platform.organizations_total} icon={Building2} hint={`${platform.organizations_suspended || 0} suspended`} />
+        <Metric label="Клинингов" value={platform.cleaning_companies_total} icon={Sparkles} hint={`${platform.companies_active || 0} active`} />
+        <Metric label="Пользователей" value={platform.users_total} icon={Users} hint={`${platform.active_users || 0} active`} />
+        <Metric label="Задач" value={platform.assignments_total} icon={ShieldCheck} hint={`${platform.completion_rate || 0}% done`} />
+        <Metric label="Рисков" value={platform.risk_tenants} icon={AlertTriangle} tone="black" hint={`${platform.overdue || 0} overdue`} />
       </div>
 
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-6">

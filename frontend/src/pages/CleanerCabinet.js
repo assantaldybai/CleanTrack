@@ -95,10 +95,6 @@ const CleanerCabinet = () => {
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Metric icon={ClipboardCheck} label="Моих задач" value={analytics.assignments_total} />
-        <Metric icon={CheckCircle2} label="Выполнено" value={analytics.completed} />
-
       <Card className="border-2 border-black bg-black text-white">
         <CardHeader><CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Что делать сейчас</CardTitle></CardHeader>
         <CardContent className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -115,6 +111,9 @@ const CleanerCabinet = () => {
         </CardContent>
       </Card>
 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Metric icon={ClipboardCheck} label="Моих задач" value={analytics.assignments_total} />
+        <Metric icon={CheckCircle2} label="Выполнено" value={analytics.completed} />
         <Metric icon={Star} label="Средняя оценка" value={analytics.average_quality || 0} />
       </div>
 
