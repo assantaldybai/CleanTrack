@@ -454,7 +454,7 @@ def test_analytics_overview():
             if response.status_code == 200:
                 data = response.json()
                 # Check basic structure
-                if "total_assignments" in data and "completed" in data:
+                if "assignments_total" in data and "completed" in data:
                     print_result(True, f"{role_key} analytics working")
                 else:
                     print_result(False, f"{role_key} analytics missing fields")
