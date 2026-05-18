@@ -80,13 +80,6 @@ const CleaningCabinet = () => {
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Metric icon={ClipboardList} label="Задач" value={analytics.assignments_total} />
-        <Metric icon={Users} label="Клинеров" value={analytics.active_cleaners} />
-        <Metric icon={UserCheck} label="Выполнено" value={analytics.completed} />
-        <Metric icon={Sparkles} label="Средняя оценка" value={analytics.average_quality || 0} />
-      </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="border-2 border-black bg-black text-white">
           <CardHeader><CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Главное ограничение</CardTitle></CardHeader>
@@ -103,6 +96,13 @@ const CleaningCabinet = () => {
             <ControlTile icon={ClipboardList} label="Сегодня" value={todayTasks.length} tone="yellow" />
           </CardContent>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Metric icon={ClipboardList} label="Задач" value={analytics.assignments_total} />
+        <Metric icon={Users} label="Клинеров" value={analytics.active_cleaners} />
+        <Metric icon={UserCheck} label="Выполнено" value={analytics.completed} />
+        <Metric icon={Sparkles} label="Средняя оценка" value={analytics.average_quality || 0} />
       </div>
 
       <Card>

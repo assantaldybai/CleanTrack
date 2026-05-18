@@ -88,13 +88,6 @@ const OrganizationCabinet = () => {
 
       {message && <div className="rounded-xl border-2 border-black bg-yellow-50 px-4 py-3 font-semibold text-black">{message}</div>}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <Metric icon={Building2} label="Объектов" value={buildings.length} />
-        <Metric icon={MapPin} label="Зон" value={zones.length} />
-        <Metric icon={CheckSquare} label="Чек-листов" value={checklists.length} />
-        <Metric icon={ClipboardList} label="Задач" value={analytics.assignments_total} />
-        <Metric icon={BarChart3} label="Выполнение" value={`${analytics.completion_rate || 0}%`} />
-
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <Card className="border-2 border-black bg-black text-white">
           <CardHeader><CardTitle className="flex items-center gap-2 text-yellow-400"><Target className="h-5 w-5" />Главное ограничение</CardTitle></CardHeader>
@@ -113,12 +106,18 @@ const OrganizationCabinet = () => {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <Metric icon={Building2} label="Объектов" value={buildings.length} />
+        <Metric icon={MapPin} label="Зон" value={zones.length} />
+        <Metric icon={CheckSquare} label="Чек-листов" value={checklists.length} />
+        <Metric icon={ClipboardList} label="Задач" value={analytics.assignments_total} />
+        <Metric icon={BarChart3} label="Выполнение" value={`${analytics.completion_rate || 0}%`} />
+      </div>
+
       <div className="flex items-center gap-3 pt-2">
         <div className="h-px bg-gray-200 flex-1"></div>
         <span className="text-xs font-black uppercase tracking-[0.3em] text-gray-400">Настройка</span>
         <div className="h-px bg-gray-200 flex-1"></div>
-      </div>
-
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
